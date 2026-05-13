@@ -1,0 +1,124 @@
+const Stripe = require('stripe');
+
+const VIDEOS = {
+  '1960': 'Дебаты Кеннеди и Никсона (1960)',
+  '1992': 'Речь Патрика Бьюкенена (1992)',
+  '2008': 'Дебаты Обамы и Маккейна (2008)',
+  '2016': 'Дебаты Трампа и Клинтон (2016)',
+  'apprentice': 'The Apprentice (2004)',
+};
+const GOAL_CENTS = 10000;
+
+function rawBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    req.on('data', (c) => chunks.push(c));
+    req.on('end', () => resolve(Buffer.concat(chunks)));
+    req.on('error', reject);
+  });
+}
+
+async function tg(text) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) {
+    console.warn('telegram env missing');
+    return;
+  }
+  try {
+    const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+        disable_web_page_preview: true,
+      }),
+    });
+    if (!r.ok) console.error('telegram non-200', r.status, await r.text());
+  } catch (e) {
+    console.error('telegram error', e);
+  }
+}
+
+async function sumForVideo(stripe, videoId) {
+  let total = 0;
+  let starting_after;
+  for (let i = 0; i < 50; i++) {
+    const resp = await stripe.checkout.sessions.list({
+      limit: 100,
+      status: 'complete',
+      starting_after,
+    });
+    for (const s of resp.data) {
+      if (s.metadata?.video_id === videoId && s.payment_status === 'paid') {
+        total += s.amount_total || 0;
+      }
+    }
+    if (!resp.has_more) break;
+    starting_after = resp.data[resp.data.length - 1].id;
+  }
+  return total;
+}
+
+module.exports = async (req, res) => {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).end();
+  }
+
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const sig = req.headers['stripe-signature'];
+
+  let event;
+  try {
+    const raw = await rawBody(req);
+    event = stripe.webhooks.constructEvent(raw, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error('webhook signature failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const videoId = session.metadata?.video_id;
+    const videoName = VIDEOS[videoId] || videoId || 'unknown';
+    const eur = (session.amount_total || 0) / 100;
+    const email =
+      session.customer_details?.email || session.customer_email || 'нет email';
+
+    let totalEur = null;
+    let totalCents = null;
+    try {
+      totalCents = await sumForVideo(stripe, videoId);
+      totalEur = totalCents / 100;
+    } catch (e) {
+      console.error('sum failed', e);
+    }
+
+    const escape = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+
+    let text =
+      `<b>💸 Новый донат</b>\n` +
+      `Видео: <b>${escape(videoName)}</b>\n` +
+      `Сумма: <b>€${eur}</b>\n` +
+      `Email: <code>${escape(email)}</code>`;
+    if (totalEur !== null) {
+      text += `\n\nВсего по видео: <b>€${totalEur}</b> из €100`;
+    }
+    await tg(text);
+
+    if (totalCents !== null && totalCents >= GOAL_CENTS && totalCents - (session.amount_total || 0) < GOAL_CENTS) {
+      await tg(
+        `🏆 <b>ВИДЕО СОБРАЛО €100!</b>\n` +
+        `<b>${escape(videoName)}</b>\n` +
+        `Пора готовить рассылку доступа всем, кто проголосовал.`
+      );
+    }
+  }
+
+  return res.status(200).json({ received: true });
+};
+
+module.exports.config = { api: { bodyParser: false } };

@@ -4,6 +4,30 @@
     if (btn) btn.addEventListener('click', () => openAmountForm(card));
   });
 
+  loadTotals();
+
+  async function loadTotals() {
+    try {
+      const r = await fetch('/api/totals');
+      if (!r.ok) return;
+      const { totals } = await r.json();
+      document.querySelectorAll('.card').forEach((card) => {
+        if (card.querySelector('.row')?.dataset.expanded) return;
+        const id = card.dataset.id;
+        const cents = (totals && totals[id]) || 0;
+        const eur = Math.floor(cents / 100);
+        const pct = Math.min(100, Math.floor((cents / 10000) * 100));
+        card.dataset.raised = String(eur);
+        const bar = card.querySelector('.progress > span');
+        if (bar) bar.style.width = pct + '%';
+        const sumB = card.querySelector('.sum b');
+        if (sumB) sumB.textContent = '€' + eur;
+      });
+    } catch (e) {
+      console.error('totals load error', e);
+    }
+  }
+
   function openAmountForm(card) {
     const row = card.querySelector('.row');
     if (row.dataset.expanded) return;
