@@ -1,10 +1,27 @@
 (() => {
+  showCancelBannerIfNeeded();
+
   document.querySelectorAll('.card').forEach((card) => {
     const btn = card.querySelector('.vote');
     if (btn) btn.addEventListener('click', () => openAmountForm(card));
   });
 
   loadTotals();
+
+  function showCancelBannerIfNeeded() {
+    const params = new URLSearchParams(location.search);
+    if (params.get('canceled') !== '1') return;
+    const banner = document.createElement('div');
+    banner.className = 'cancel-banner';
+    banner.innerHTML = `
+      <span>Оплата отменена. Можно попробовать снова — голос пока не засчитан.</span>
+      <button type="button" aria-label="Закрыть">×</button>
+    `;
+    const hero = document.querySelector('.hero');
+    hero?.insertAdjacentElement('afterend', banner);
+    banner.querySelector('button').addEventListener('click', () => banner.remove());
+    history.replaceState(null, '', location.pathname);
+  }
 
   async function loadTotals() {
     try {

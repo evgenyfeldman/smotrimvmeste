@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Спасибо! — Смотрим вместе</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="thanks">
+    <div class="thanks-icon" aria-hidden="true">💌</div>
+    <h1 class="thanks-h1">Голос засчитан</h1>
+    <p class="thanks-lead" id="lead">Спасибо за поддержку.</p>
+
+    <div class="thanks-card" id="details" hidden>
+      <div class="thanks-row">
+        <span class="thanks-label">Видео</span>
+        <span class="thanks-value" id="video-name">—</span>
+      </div>
+      <div class="thanks-row">
+        <span class="thanks-label">Сумма</span>
+        <span class="thanks-value" id="eur">—</span>
+      </div>
+      <div class="thanks-row">
+        <span class="thanks-label">Доступ придёт на</span>
+        <span class="thanks-value" id="email">—</span>
+      </div>
+      <div class="thanks-row thanks-progress-row">
+        <span class="thanks-label">Прогресс по видео</span>
+        <span class="thanks-value" id="progress-text">—</span>
+      </div>
+      <div class="progress" aria-hidden="true"><span id="progress-bar" style="width:0%"></span></div>
+    </div>
+
+    <p class="thanks-note">
+      Когда видео соберёт <b>€100</b> — пришлём ссылку на просмотр всем, кто проголосовал.
+      Если этого видео в итоге не победит, твой донат всё равно засчитан как голос — деньги не возвращаются.
+    </p>
+
+    <a class="thanks-back" href="/">← К другим видео</a>
+  </main>
+
+  <script src="success.js" defer></script>
+</body>
+</html>
