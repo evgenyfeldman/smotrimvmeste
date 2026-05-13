@@ -1,0 +1,225 @@
+:root {
+  --bg: #fafaf7;
+  --fg: #111113;
+  --muted: #6b6b70;
+  --card: #ffffff;
+  --line: #e6e6e2;
+  --accent: #111113;
+  --accent-fg: #ffffff;
+  --bar-bg: #ececea;
+  --bar-fill: #111113;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f0f10;
+    --fg: #ececec;
+    --muted: #8a8a8a;
+    --card: #18181b;
+    --line: #2a2a2e;
+    --accent: #e7e3d4;
+    --accent-fg: #0f0f10;
+    --bar-bg: #26262a;
+    --bar-fill: #e7e3d4;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.hero {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 24px 32px;
+  text-align: left;
+}
+
+.hero h1 {
+  font-size: 44px;
+  line-height: 1.05;
+  font-weight: 700;
+  margin: 0 0 16px;
+  letter-spacing: -0.02em;
+}
+
+.hero .lead {
+  font-size: 18px;
+  color: var(--fg);
+  margin: 0 0 12px;
+}
+
+.hero .rules {
+  font-size: 15px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.grid {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px 24px 64px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.card h2 {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.progress {
+  position: relative;
+  height: 8px;
+  background: var(--bar-bg);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  background: var(--bar-fill);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.sum {
+  font-size: 14px;
+  color: var(--muted);
+}
+.sum b {
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.vote {
+  appearance: none;
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.05s ease;
+}
+.vote:hover { opacity: 0.9; }
+.vote:active { transform: translateY(1px); }
+.vote:disabled { opacity: 0.5; cursor: default; }
+
+.vote-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.vote-prefix {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 16px;
+}
+.vote-amount {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 9px 12px;
+  border-radius: 10px;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.vote-amount::-webkit-outer-spin-button,
+.vote-amount::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.vote-amount:focus {
+  border-color: var(--fg);
+}
+.vote-submit { white-space: nowrap; }
+.vote-cancel {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+.vote-cancel:hover { color: var(--fg); background: var(--bar-bg); }
+
+.foot {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .hero { padding: 40px 20px 24px; }
+  .hero h1 { font-size: 34px; }
+  .grid { padding: 12px 20px 48px; }
+  .card { padding: 18px 18px 16px; }
+  .row { flex-direction: column; align-items: stretch; }
+  .vote { width: 100%; }
+}

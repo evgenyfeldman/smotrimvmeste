@@ -1,0 +1,11 @@
+{
+  "name": "smotrimvmeste",
+  "private": true,
+  "version": "0.1.0",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "stripe": "^17.3.0"
+  }
+}
