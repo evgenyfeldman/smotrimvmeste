@@ -42,6 +42,26 @@ async function tg(text) {
   }
 }
 
+async function appendToSheet(row) {
+  const url = process.env.SHEETS_WEBHOOK_URL;
+  const secret = process.env.SHEETS_WEBHOOK_SECRET;
+  if (!url || !secret) {
+    console.warn('sheets env missing');
+    return;
+  }
+  try {
+    const r = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ secret, ...row }),
+      redirect: 'follow',
+    });
+    if (!r.ok) console.error('sheets non-200', r.status, await r.text());
+  } catch (e) {
+    console.error('sheets error', e);
+  }
+}
+
 async function sumForVideo(stripe, videoId) {
   let total = 0;
   let starting_after;
@@ -87,6 +107,13 @@ module.exports = async (req, res) => {
     const eur = (session.amount_total || 0) / 100;
     const email =
       session.customer_details?.email || session.customer_email || 'нет email';
+
+    await appendToSheet({
+      video: videoName,
+      email,
+      eur,
+      session_id: session.id,
+    });
 
     let totalEur = null;
     let totalCents = null;
