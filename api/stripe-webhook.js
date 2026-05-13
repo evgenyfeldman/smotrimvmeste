@@ -7,6 +7,13 @@ const VIDEOS = {
   '2016': 'Дебаты Трампа и Клинтон (2016)',
   'apprentice': 'The Apprentice (2004)',
 };
+const TAGS = {
+  '1960': '1960',
+  '1992': '1992',
+  '2008': '2008',
+  '2016': '2016',
+  'apprentice': '2004',
+};
 const GOAL_CENTS = 10000;
 
 function rawBody(req) {
@@ -108,8 +115,10 @@ module.exports = async (req, res) => {
     const email =
       session.customer_details?.email || session.customer_email || 'нет email';
 
+    const tag = TAGS[videoId] || videoId;
+    const cleanName = videoName.replace(/\s*\(\d{4}\)$/, '');
     await appendToSheet({
-      video: videoName,
+      video: `${tag} | ${cleanName}`,
       email,
       eur,
       session_id: session.id,
