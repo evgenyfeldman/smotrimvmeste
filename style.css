@@ -80,8 +80,7 @@ html, body {
   padding: 14px 16px;
   background: var(--card);
   border: 1px solid var(--line);
-  border-left: 3px solid var(--fg);
-  border-radius: 0 10px 10px 0;
+  border-radius: 10px;
   line-height: 1.55;
 }
 
