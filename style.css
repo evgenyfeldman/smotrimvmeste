@@ -77,17 +77,15 @@ html, body {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 18px 20px;
+  padding: 14px 14px 18px;
   display: flex;
-  flex-direction: row;
-  gap: 18px;
-  align-items: stretch;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .card-image {
-  width: 130px;
-  flex-shrink: 0;
-  aspect-ratio: 2 / 3;
+  width: 100%;
+  aspect-ratio: 16 / 9;
   background: var(--bar-bg);
   border-radius: 10px;
   display: grid;
@@ -98,13 +96,15 @@ html, body {
   text-transform: uppercase;
   font-weight: 600;
   user-select: none;
+  background-size: cover;
+  background-position: center;
 }
 
 .card-body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  flex: 1;
+  padding: 0 6px;
   min-width: 0;
 }
 
@@ -244,9 +244,9 @@ html, body {
   .hero { padding: 40px 20px 24px; }
   .hero h1 { font-size: 34px; }
   .grid { padding: 12px 20px 48px; }
-  .card { padding: 14px; gap: 14px; }
-  .card-image { width: 96px; }
-  .card h2 { font-size: 19px; }
+  .card { padding: 10px 10px 14px; gap: 12px; }
+  .card-body { padding: 0 4px; }
+  .card h2 { font-size: 20px; }
   .desc { font-size: 14px; }
   .row { flex-direction: column; align-items: stretch; gap: 10px; }
   .vote { width: 100%; }
