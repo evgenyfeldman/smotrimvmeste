@@ -75,7 +75,7 @@ html, body {
 
 .hero .rules {
   font-size: 14px;
-  color: var(--muted);
+  color: var(--fg);
   margin: 0;
   padding: 14px 16px;
   background: var(--card);
@@ -83,10 +83,6 @@ html, body {
   border-left: 3px solid var(--fg);
   border-radius: 0 10px 10px 0;
   line-height: 1.55;
-}
-
-.hero .rules b {
-  color: var(--fg);
 }
 
 .grid {
