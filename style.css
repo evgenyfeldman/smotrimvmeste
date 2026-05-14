@@ -28,6 +28,18 @@
 
 * { box-sizing: border-box; }
 
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--muted);
+  transition: text-decoration-color 0.15s ease;
+}
+a:hover {
+  text-decoration-color: var(--fg);
+}
+
 html, body {
   margin: 0;
   padding: 0;

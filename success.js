@@ -6,7 +6,7 @@
   const details = document.getElementById('details');
 
   if (!sid) {
-    lead.textContent = 'Не удалось определить твой платёж. Если списание прошло — напиши мне в Telegram.';
+    lead.innerHTML = 'Не удалось определить твой платёж. Если списание прошло — напиши мне в <a href="https://t.me/feldmanevgeny" target="_blank" rel="noopener">Telegram</a>.';
     return;
   }
 
