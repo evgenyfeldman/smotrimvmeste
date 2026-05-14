@@ -58,12 +58,19 @@
         <button type="submit" class="vote vote-submit">Оплатить</button>
         <button type="button" class="vote-cancel" aria-label="Отмена">×</button>
       </form>
+      <div class="vote-error" role="alert" hidden></div>
     `;
 
     const form = row.querySelector('.vote-form');
     const input = form.querySelector('.vote-amount');
     const submit = form.querySelector('.vote-submit');
     const cancel = form.querySelector('.vote-cancel');
+    const errEl = row.querySelector('.vote-error');
+
+    const showError = (msg) => { errEl.textContent = msg; errEl.hidden = false; };
+    const clearError = () => { errEl.hidden = true; errEl.textContent = ''; };
+
+    input.addEventListener('input', clearError);
 
     setTimeout(() => { input.focus(); input.select(); }, 0);
 
@@ -71,8 +78,22 @@
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const amount = Math.floor(Number(input.value));
-      if (!Number.isFinite(amount) || amount < 7 || amount > 1000) {
+      clearError();
+      const raw = input.value.trim();
+      if (raw === '' || isNaN(Number(raw))) {
+        showError('Введи целое число от 7 до 1000');
+        input.focus();
+        return;
+      }
+      const amount = Math.floor(Number(raw));
+      if (amount < 7) {
+        showError('Минимум — €7. Сумма меньше не засчитывается как голос.');
+        input.focus();
+        input.select();
+        return;
+      }
+      if (amount > 1000) {
+        showError('Максимум €1000 за раз. Если хочешь больше — сделай несколько голосов.');
         input.focus();
         input.select();
         return;
@@ -93,7 +114,7 @@
         console.error(err);
         submit.disabled = false;
         submit.textContent = 'Оплатить';
-        alert('Не удалось открыть оплату. Попробуй ещё раз через минуту.');
+        showError('Не удалось открыть оплату. Попробуй ещё раз через минуту.');
       }
     });
   }

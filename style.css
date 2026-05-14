@@ -8,6 +8,7 @@
   --accent-fg: #ffffff;
   --bar-bg: #ececea;
   --bar-fill: #111113;
+  --error: #c1432f;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,6 +22,7 @@
     --accent-fg: #0f0f10;
     --bar-bg: #26262a;
     --bar-fill: #e7e3d4;
+    --error: #ff7a6a;
   }
 }
 
@@ -231,6 +233,19 @@ html, body {
   border-radius: 8px;
 }
 .vote-cancel:hover { color: var(--fg); background: var(--bar-bg); }
+
+.row[data-expanded] {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.vote-error {
+  color: var(--error);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
 
 .foot {
   max-width: 720px;
