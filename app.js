@@ -14,7 +14,7 @@
     const banner = document.createElement('div');
     banner.className = 'cancel-banner';
     banner.innerHTML = `
-      <span>Оплата отменена. Можно попробовать снова — голос пока не засчитан.</span>
+      <span>Оплата отменена. Попробуй снова</span>
       <button type="button" aria-label="Закрыть">×</button>
     `;
     const hero = document.querySelector('.hero');
@@ -87,7 +87,7 @@
       }
       const amount = Math.floor(Number(raw));
       if (amount < 7) {
-        showError('Минимум — €7. Сумма меньше не засчитывается как голос.');
+        showError('Минимум — €7');
         input.focus();
         input.select();
         return;
@@ -108,7 +108,7 @@
         console.error(err);
         submit.disabled = false;
         submit.textContent = 'Оплатить';
-        showError('Не удалось открыть оплату. Попробуй ещё раз через минуту.');
+        showError('Не удалось открыть страницу оплаты. Попробуй ещё раз через минуту.');
       }
     });
   }
