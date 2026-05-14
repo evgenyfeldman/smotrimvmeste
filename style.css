@@ -77,10 +77,35 @@ html, body {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 20px 22px 18px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: row;
+  gap: 18px;
+  align-items: stretch;
+}
+
+.card-image {
+  width: 130px;
+  flex-shrink: 0;
+  aspect-ratio: 2 / 3;
+  background: var(--bar-bg);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  user-select: none;
+}
+
+.card-body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  flex: 1;
+  min-width: 0;
 }
 
 .badge {
@@ -219,9 +244,15 @@ html, body {
   .hero { padding: 40px 20px 24px; }
   .hero h1 { font-size: 34px; }
   .grid { padding: 12px 20px 48px; }
-  .card { padding: 18px 18px 16px; }
-  .row { flex-direction: column; align-items: stretch; }
+  .card { padding: 14px; gap: 14px; }
+  .card-image { width: 96px; }
+  .card h2 { font-size: 19px; }
+  .desc { font-size: 14px; }
+  .row { flex-direction: column; align-items: stretch; gap: 10px; }
   .vote { width: 100%; }
+  .vote-form { flex-wrap: wrap; }
+  .vote-amount { font-size: 16px; }
+  .vote-submit { flex: 0 0 100%; order: 99; }
 }
 
 .thanks {
