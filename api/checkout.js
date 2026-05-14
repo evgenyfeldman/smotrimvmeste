@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
     }
 
     const eur = Number(amount);
-    if (!Number.isFinite(eur) || eur < 7 || eur > 1000) {
+    if (!Number.isFinite(eur) || eur < 7) {
       return res.status(400).json({ error: 'invalid_amount' });
     }
     const unit_amount = Math.round(eur * 100);

@@ -54,7 +54,7 @@
     row.innerHTML = `
       <form class="vote-form" novalidate>
         <span class="vote-prefix">€</span>
-        <input type="number" class="vote-amount" min="7" max="1000" step="1" value="7" inputmode="numeric" required />
+        <input type="number" class="vote-amount" min="7" step="1" value="7" inputmode="numeric" required />
         <button type="submit" class="vote vote-submit">Оплатить</button>
         <button type="button" class="vote-cancel" aria-label="Отмена">×</button>
       </form>
@@ -81,19 +81,13 @@
       clearError();
       const raw = input.value.trim();
       if (raw === '' || isNaN(Number(raw))) {
-        showError('Введи целое число от 7 до 1000');
+        showError('Введи целое число от 7 и больше.');
         input.focus();
         return;
       }
       const amount = Math.floor(Number(raw));
       if (amount < 7) {
         showError('Минимум — €7. Сумма меньше не засчитывается как голос.');
-        input.focus();
-        input.select();
-        return;
-      }
-      if (amount > 1000) {
-        showError('Максимум €1000 за раз. Если хочешь больше — сделай несколько голосов.');
         input.focus();
         input.select();
         return;
