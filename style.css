@@ -57,13 +57,24 @@ html, body {
 .hero .lead {
   font-size: 18px;
   color: var(--fg);
-  margin: 0 0 12px;
+  margin: 0 0 24px;
+  line-height: 1.55;
 }
 
 .hero .rules {
-  font-size: 15px;
+  font-size: 14px;
   color: var(--muted);
   margin: 0;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--fg);
+  border-radius: 0 10px 10px 0;
+  line-height: 1.55;
+}
+
+.hero .rules b {
+  color: var(--fg);
 }
 
 .grid {
