@@ -92,16 +92,38 @@
     const isPast = card.classList.contains('is-past');
     const submitLabel = (isWon || isPast) ? 'Купить' : 'Оплатить';
     const minEur = isPast ? 5 : (isWon ? 8 : 7);
+    const raised = card.dataset.raised || '0';
+    const airDate = card.dataset.airDate || '';
 
-    row.innerHTML = `
-      <form class="vote-form" novalidate>
-        <span class="vote-prefix">€</span>
-        <input type="number" class="vote-amount" min="${minEur}" step="1" value="${minEur}" inputmode="numeric" required />
-        <button type="submit" class="vote vote-submit">${submitLabel}</button>
-        <button type="button" class="vote-cancel" aria-label="Отмена">×</button>
-      </form>
-      <div class="vote-error" role="alert" hidden></div>
+    const formHtml = `
+      <div class="form-wrap">
+        <form class="vote-form" novalidate>
+          <span class="vote-prefix">€</span>
+          <input type="number" class="vote-amount" min="${minEur}" step="1" value="${minEur}" inputmode="numeric" required />
+          <button type="submit" class="vote vote-submit">${submitLabel}</button>
+          <button type="button" class="vote-cancel" aria-label="Отмена">×</button>
+        </form>
+        <div class="vote-error" role="alert" hidden></div>
+      </div>
     `;
+
+    if (isWon) {
+      row.dataset.won = '1';
+      row.innerHTML = `
+        <div class="won-info">
+          ${airDate ? `<div class="won-date">Эфир ${escapeHtml(airDate)}</div>` : ''}
+          <div class="sum sum-won">Необходимая сумма собрана! Вы ещё можете купить билет</div>
+        </div>
+        ${formHtml}
+      `;
+    } else if (isPast) {
+      row.innerHTML = formHtml;
+    } else {
+      row.innerHTML = `
+        <span class="sum"><b>€${raised}</b> из €100</span>
+        ${formHtml}
+      `;
+    }
 
     const form = row.querySelector('.vote-form');
     const input = form.querySelector('.vote-amount');

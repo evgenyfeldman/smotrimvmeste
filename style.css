@@ -294,9 +294,38 @@ html, body {
 .vote-cancel:hover { color: var(--fg); background: var(--bar-bg); }
 
 .row[data-expanded] {
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.form-wrap {
+  flex: 0 0 auto;
+  width: 270px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.row[data-expanded] .vote-form {
+  width: 100%;
+}
+
+.row[data-expanded][data-won="1"] {
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: 12px;
+}
+.row[data-expanded][data-won="1"] .form-wrap {
+  align-self: center;
+}
+
+.card-past .row[data-expanded] {
+  flex-direction: column;
+  align-items: stretch;
+}
+.card-past .row[data-expanded] .form-wrap {
+  width: 100%;
 }
 
 .vote-error {
@@ -377,6 +406,8 @@ html, body {
   .card h2 { font-size: 20px; }
   .desc { font-size: 14px; }
   .row { flex-direction: column; align-items: stretch; gap: 10px; }
+  .row[data-expanded] { flex-direction: column; align-items: stretch; }
+  .row[data-expanded] .form-wrap { width: 100%; }
   .vote { width: 100%; }
   .vote-form { flex-wrap: wrap; }
   .vote-amount { font-size: 16px; }
