@@ -55,20 +55,36 @@ module.exports = async (req, res) => {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const origin = req.headers.origin || `https://${req.headers.host}`;
 
-    let minEur = 7;
+    // Определяем состояние видео: past (эфир прошёл), won (собрано ≥€100), open
+    let state = 'open';
     if (PAST_VIDEOS[video_id]) {
-      minEur = PAST_VIDEOS[video_id].minEur;
+      state = 'past';
     } else {
       try {
         const total = await sumForVideo(stripe, video_id);
-        if (total >= GOAL_CENTS) minEur = 8;
+        if (total >= GOAL_CENTS) state = 'won';
       } catch (e) {
-        console.error('total computation failed, falling back to min €7', e);
+        console.error('total computation failed, treating as open', e);
       }
     }
+
+    const minEur = state === 'past' ? 5 : (state === 'won' ? 8 : 7);
     if (eur < minEur) {
       return res.status(400).json({ error: 'invalid_amount', min: minEur });
     }
+
+    const prefix = state === 'past'
+      ? 'Запись'
+      : state === 'won'
+      ? 'Билет на эфир'
+      : 'Донат и билет на эфир';
+
+    const description = state === 'past'
+      ? 'Доступ к записи прошедшего эфира «Смотрим вместе с Евгением Фельдманом». Ссылку на запись пришлём на email.'
+      : state === 'won'
+      ? 'Билет на закрытый эфир «Смотрим вместе с Евгением Фельдманом». Ссылку на эфир пришлём на email.'
+      : 'Сумма — это голос и билет на закрытый эфир «Смотрим вместе с Евгением Фельдманом». Когда видео соберёт €100, я объявлю дату эфира и пришлю ссылку всем участникам.';
+
     const unit_amount = Math.round(eur * 100);
 
     const session = await stripe.checkout.sessions.create({
@@ -80,8 +96,8 @@ module.exports = async (req, res) => {
           currency: 'eur',
           unit_amount,
           product_data: {
-            name: `Голос: ${videoName}`,
-            description: 'Донат-голос на проекте «Смотрим вместе с Евгением Фельдманом». Когда видео собирает €100 — все участники получают ссылку на эфир по электронной почте.',
+            name: `${prefix}: ${videoName}`,
+            description,
           },
         },
       }],
