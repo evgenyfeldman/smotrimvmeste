@@ -83,6 +83,8 @@ html, body {
   border-radius: 10px;
   line-height: 1.55;
 }
+.hero .rules p { margin: 0; }
+.hero .rules p + p { margin-top: 10px; }
 
 .grid {
   max-width: 720px;
