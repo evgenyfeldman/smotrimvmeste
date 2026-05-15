@@ -1,4 +1,6 @@
 (() => {
+  const GOAL_CENTS = 10000;
+
   showCancelBannerIfNeeded();
 
   document.querySelectorAll('.card').forEach((card) => {
@@ -29,20 +31,40 @@
       if (!r.ok) return;
       const { totals } = await r.json();
       document.querySelectorAll('.card').forEach((card) => {
+        if (card.dataset.preview === '1') return;
         if (card.querySelector('.row')?.dataset.expanded) return;
         const id = card.dataset.id;
         const cents = (totals && totals[id]) || 0;
         const eur = Math.floor(cents / 100);
         const pct = Math.min(100, Math.floor((cents / 10000) * 100));
+        const isWon = cents >= GOAL_CENTS;
         card.dataset.raised = String(eur);
+        card.classList.toggle('is-won', isWon);
         const bar = card.querySelector('.progress > span');
         if (bar) bar.style.width = pct + '%';
-        const sumB = card.querySelector('.sum b');
-        if (sumB) sumB.textContent = '€' + eur;
+        renderCollapsedRow(card);
       });
     } catch (e) {
       console.error('totals load error', e);
     }
+  }
+
+  function renderCollapsedRow(card) {
+    const row = card.querySelector('.row');
+    if (row.dataset.expanded) return;
+    const id = card.dataset.id;
+    const raised = card.dataset.raised || '0';
+    const isWon = card.classList.contains('is-won');
+    row.innerHTML = isWon
+      ? `
+        <span class="sum sum-won">🏆 <b>€${raised}</b> собрано · цель достигнута</span>
+        <button class="vote" type="button" data-video="${id}">Купить билет €7+</button>
+      `
+      : `
+        <span class="sum"><b>€${raised}</b> из €100</span>
+        <button class="vote" type="button" data-video="${id}">Проголосовать €7+</button>
+      `;
+    row.querySelector('.vote').addEventListener('click', () => openAmountForm(card));
   }
 
   function openAmountForm(card) {
@@ -50,12 +72,14 @@
     if (row.dataset.expanded) return;
     row.dataset.expanded = '1';
     const videoId = card.dataset.id;
+    const isWon = card.classList.contains('is-won');
+    const submitLabel = isWon ? 'Купить' : 'Оплатить';
 
     row.innerHTML = `
       <form class="vote-form" novalidate>
         <span class="vote-prefix">€</span>
         <input type="number" class="vote-amount" min="7" step="1" value="7" inputmode="numeric" required />
-        <button type="submit" class="vote vote-submit">Оплатить</button>
+        <button type="submit" class="vote vote-submit">${submitLabel}</button>
         <button type="button" class="vote-cancel" aria-label="Отмена">×</button>
       </form>
       <div class="vote-error" role="alert" hidden></div>
@@ -107,7 +131,7 @@
       } catch (err) {
         console.error(err);
         submit.disabled = false;
-        submit.textContent = 'Оплатить';
+        submit.textContent = submitLabel;
         showError('Не удалось открыть страницу оплаты. Попробуй ещё раз через минуту.');
       }
     });
@@ -115,13 +139,7 @@
 
   function collapseForm(card) {
     const row = card.querySelector('.row');
-    const videoId = card.dataset.id;
-    const raised = card.dataset.raised || '0';
     row.removeAttribute('data-expanded');
-    row.innerHTML = `
-      <span class="sum"><b>€${raised}</b> из €100</span>
-      <button class="vote" type="button" data-video="${videoId}">Проголосовать €7+</button>
-    `;
-    row.querySelector('.vote').addEventListener('click', () => openAmountForm(card));
+    renderCollapsedRow(card);
   }
 })();

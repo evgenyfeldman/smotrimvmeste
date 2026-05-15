@@ -188,6 +188,9 @@ html, body {
   color: var(--fg);
   font-weight: 600;
 }
+.sum-won {
+  color: var(--fg);
+}
 
 .vote {
   appearance: none;
