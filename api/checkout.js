@@ -8,6 +8,9 @@ const VIDEOS = {
   'apprentice': 'The Apprentice (2004)',
 };
 const GOAL_CENTS = 10000;
+// Видео, эфир которых уже прошёл — продаём запись по сниженному минимуму.
+// Пока хардкод; позже вынесем в Sheet/конфиг.
+const PAST_VIDEOS = ['2008'];
 
 async function sumForVideo(stripe, videoId) {
   let total = 0;
@@ -51,11 +54,15 @@ module.exports = async (req, res) => {
     const origin = req.headers.origin || `https://${req.headers.host}`;
 
     let minEur = 7;
-    try {
-      const total = await sumForVideo(stripe, video_id);
-      if (total >= GOAL_CENTS) minEur = 8;
-    } catch (e) {
-      console.error('total computation failed, falling back to min €7', e);
+    if (PAST_VIDEOS[video_id]) {
+      minEur = PAST_VIDEOS[video_id].minEur;
+    } else {
+      try {
+        const total = await sumForVideo(stripe, video_id);
+        if (total >= GOAL_CENTS) minEur = 8;
+      } catch (e) {
+        console.error('total computation failed, falling back to min €7', e);
+      }
     }
     if (eur < minEur) {
       return res.status(400).json({ error: 'invalid_amount', min: minEur });

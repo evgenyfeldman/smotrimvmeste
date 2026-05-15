@@ -32,6 +32,7 @@
       const { totals } = await r.json();
       document.querySelectorAll('.card').forEach((card) => {
         if (card.dataset.preview === '1') return;
+        if (card.classList.contains('is-past')) return;
         if (card.querySelector('.row')?.dataset.expanded) return;
         const id = card.dataset.id;
         const cents = (totals && totals[id]) || 0;
@@ -55,8 +56,11 @@
     const id = card.dataset.id;
     const raised = card.dataset.raised || '0';
     const isWon = card.classList.contains('is-won');
+    const isPast = card.classList.contains('is-past');
     const airDate = card.dataset.airDate || '';
-    if (isWon) {
+    if (isPast) {
+      row.innerHTML = `<button class="vote" type="button" data-video="${id}">Купить запись €5+</button>`;
+    } else if (isWon) {
       row.dataset.won = '1';
       row.innerHTML = `
         <div class="won-info">
@@ -85,8 +89,9 @@
     row.dataset.expanded = '1';
     const videoId = card.dataset.id;
     const isWon = card.classList.contains('is-won');
-    const submitLabel = isWon ? 'Купить' : 'Оплатить';
-    const minEur = isWon ? 8 : 7;
+    const isPast = card.classList.contains('is-past');
+    const submitLabel = (isWon || isPast) ? 'Купить' : 'Оплатить';
+    const minEur = isPast ? 5 : (isWon ? 8 : 7);
 
     row.innerHTML = `
       <form class="vote-form" novalidate>
