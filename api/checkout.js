@@ -10,7 +10,9 @@ const VIDEOS = {
 const GOAL_CENTS = 10000;
 // Видео, эфир которых уже прошёл — продаём запись по сниженному минимуму.
 // Пока хардкод; позже вынесем в Sheet/конфиг.
-const PAST_VIDEOS = ['2008'];
+const PAST_VIDEOS = {
+  '2008': { minEur: 5 },
+};
 
 async function sumForVideo(stripe, videoId) {
   let total = 0;
