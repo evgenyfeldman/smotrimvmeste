@@ -200,9 +200,12 @@ html, body {
   color: var(--fg);
 }
 
-.card.is-won {
+.card.is-won,
+.card.is-past {
   background: var(--card-won);
   border-color: var(--card-won-line);
+}
+.card.is-won {
   order: -1;
 }
 
