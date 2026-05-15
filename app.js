@@ -73,7 +73,7 @@
       row.removeAttribute('data-won');
       row.innerHTML = `
         <span class="sum"><b>€${raised}</b> из €100</span>
-        <button class="vote" type="button" data-video="${id}">Проголосовать €7+</button>
+        <button class="vote" type="button" data-video="${id}">Купить билет и проголосовать €7+</button>
       `;
     }
     row.querySelector('.vote').addEventListener('click', () => openAmountForm(card));
