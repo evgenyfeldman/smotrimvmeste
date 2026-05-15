@@ -55,16 +55,28 @@
     const id = card.dataset.id;
     const raised = card.dataset.raised || '0';
     const isWon = card.classList.contains('is-won');
-    row.innerHTML = isWon
-      ? `
-        <span class="sum sum-won">🏆 <b>€${raised}</b> собрано · цель достигнута</span>
+    const airDate = card.dataset.airDate || '';
+    if (isWon) {
+      row.dataset.won = '1';
+      row.innerHTML = `
+        <div class="won-info">
+          ${airDate ? `<div class="won-date">Эфир ${escapeHtml(airDate)}</div>` : ''}
+          <div class="sum sum-won">✅ <b>€${raised}</b> собрано · билеты в продаже</div>
+        </div>
         <button class="vote" type="button" data-video="${id}">Купить билет €7+</button>
-      `
-      : `
+      `;
+    } else {
+      row.removeAttribute('data-won');
+      row.innerHTML = `
         <span class="sum"><b>€${raised}</b> из €100</span>
         <button class="vote" type="button" data-video="${id}">Проголосовать €7+</button>
       `;
+    }
     row.querySelector('.vote').addEventListener('click', () => openAmountForm(card));
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[<>&"']/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
   function openAmountForm(card) {

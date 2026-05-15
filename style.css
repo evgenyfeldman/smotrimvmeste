@@ -3,6 +3,8 @@
   --fg: #111113;
   --muted: #6b6b70;
   --card: #ffffff;
+  --card-won: #fff5cd;
+  --card-won-line: #ecdf99;
   --line: #e6e6e2;
   --accent: #111113;
   --accent-fg: #ffffff;
@@ -17,6 +19,8 @@
     --fg: #ececec;
     --muted: #8a8a8a;
     --card: #18181b;
+    --card-won: #25210f;
+    --card-won-line: #4a4220;
     --line: #2a2a2e;
     --accent: #e7e3d4;
     --accent-fg: #0f0f10;
@@ -189,7 +193,36 @@ html, body {
   font-weight: 600;
 }
 .sum-won {
+  color: var(--muted);
+  font-size: 13px;
+}
+.sum-won b {
   color: var(--fg);
+}
+
+.card.is-won {
+  background: var(--card-won);
+  border-color: var(--card-won-line);
+  order: -1;
+}
+
+.row[data-won="1"] {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.won-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.won-date {
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--fg);
+  letter-spacing: -0.005em;
 }
 
 .vote {
