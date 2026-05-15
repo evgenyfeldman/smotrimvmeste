@@ -8,10 +8,12 @@ const VIDEOS = {
   'apprentice': 'The Apprentice (2004)',
 };
 const GOAL_CENTS = 10000;
-// Видео, эфир которых уже прошёл — продаём запись по сниженному минимуму.
-// Пока хардкод; позже вынесем в Sheet/конфиг.
-const PAST_VIDEOS = {
-  '2008': { minEur: 5 },
+// Превью/ручные оверрайды состояний. Если video_id здесь — берём это состояние,
+// иначе вычисляем по Stripe-итогам (>=€100 → won, иначе open).
+// Перед релизом очистить или подменить логикой из Sheets/конфига.
+const STATE_OVERRIDES = {
+  '2008': 'past',
+  '2016': 'won',
 };
 
 async function sumForVideo(stripe, videoId) {
@@ -56,10 +58,9 @@ module.exports = async (req, res) => {
     const origin = req.headers.origin || `https://${req.headers.host}`;
 
     // Определяем состояние видео: past (эфир прошёл), won (собрано ≥€100), open
-    let state = 'open';
-    if (PAST_VIDEOS[video_id]) {
-      state = 'past';
-    } else {
+    let state = STATE_OVERRIDES[video_id];
+    if (!state) {
+      state = 'open';
       try {
         const total = await sumForVideo(stripe, video_id);
         if (total >= GOAL_CENTS) state = 'won';
