@@ -61,9 +61,9 @@
       row.innerHTML = `
         <div class="won-info">
           ${airDate ? `<div class="won-date">Эфир ${escapeHtml(airDate)}</div>` : ''}
-          <div class="sum sum-won">✅ <b>€${raised}</b> собрано · билеты в продаже</div>
+          <div class="sum sum-won">Необходимая сумма собрана! Вы ещё можете купить билет</div>
         </div>
-        <button class="vote" type="button" data-video="${id}">Купить билет €7+</button>
+        <button class="vote" type="button" data-video="${id}">Купить билет €8+</button>
       `;
     } else {
       row.removeAttribute('data-won');
@@ -86,11 +86,12 @@
     const videoId = card.dataset.id;
     const isWon = card.classList.contains('is-won');
     const submitLabel = isWon ? 'Купить' : 'Оплатить';
+    const minEur = isWon ? 8 : 7;
 
     row.innerHTML = `
       <form class="vote-form" novalidate>
         <span class="vote-prefix">€</span>
-        <input type="number" class="vote-amount" min="7" step="1" value="7" inputmode="numeric" required />
+        <input type="number" class="vote-amount" min="${minEur}" step="1" value="${minEur}" inputmode="numeric" required />
         <button type="submit" class="vote vote-submit">${submitLabel}</button>
         <button type="button" class="vote-cancel" aria-label="Отмена">×</button>
       </form>
@@ -117,13 +118,13 @@
       clearError();
       const raw = input.value.trim();
       if (raw === '' || isNaN(Number(raw))) {
-        showError('Введи целое число от 7 и больше.');
+        showError(`Введи целое число от ${minEur} и больше.`);
         input.focus();
         return;
       }
       const amount = Math.floor(Number(raw));
-      if (amount < 7) {
-        showError('Минимум — €7');
+      if (amount < minEur) {
+        showError(`Минимум — €${minEur}`);
         input.focus();
         input.select();
         return;

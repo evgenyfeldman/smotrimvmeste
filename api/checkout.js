@@ -7,6 +7,27 @@ const VIDEOS = {
   '2016': 'Дебаты Трампа и Клинтон (2016)',
   'apprentice': 'The Apprentice (2004)',
 };
+const GOAL_CENTS = 10000;
+
+async function sumForVideo(stripe, videoId) {
+  let total = 0;
+  let starting_after;
+  for (let i = 0; i < 50; i++) {
+    const resp = await stripe.checkout.sessions.list({
+      limit: 100,
+      status: 'complete',
+      starting_after,
+    });
+    for (const s of resp.data) {
+      if (s.metadata?.video_id === videoId && s.payment_status === 'paid') {
+        total += s.amount_total || 0;
+      }
+    }
+    if (!resp.has_more) break;
+    starting_after = resp.data[resp.data.length - 1].id;
+  }
+  return total;
+}
 
 module.exports = async (req, res) => {
   try {
@@ -22,13 +43,24 @@ module.exports = async (req, res) => {
     }
 
     const eur = Number(amount);
-    if (!Number.isFinite(eur) || eur < 7) {
+    if (!Number.isFinite(eur)) {
       return res.status(400).json({ error: 'invalid_amount' });
     }
-    const unit_amount = Math.round(eur * 100);
 
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const origin = req.headers.origin || `https://${req.headers.host}`;
+
+    let minEur = 7;
+    try {
+      const total = await sumForVideo(stripe, video_id);
+      if (total >= GOAL_CENTS) minEur = 8;
+    } catch (e) {
+      console.error('total computation failed, falling back to min €7', e);
+    }
+    if (eur < minEur) {
+      return res.status(400).json({ error: 'invalid_amount', min: minEur });
+    }
+    const unit_amount = Math.round(eur * 100);
 
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
