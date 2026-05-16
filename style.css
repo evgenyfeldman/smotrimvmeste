@@ -164,10 +164,11 @@ a:hover { text-decoration-color: var(--ink); }
   padding-top: 4px;
 }
 .sum {
-  color: var(--muted);
+  color: var(--ink);
+  font-weight: 600;
   padding-top: 12px;
 }
-.sum b { color: var(--ink); font-weight: inherit; }
+.sum b { color: inherit; font-weight: inherit; }
 
 /* Won state */
 .card.is-won {
