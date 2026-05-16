@@ -167,7 +167,7 @@ a:hover { text-decoration-color: var(--ink); }
   color: var(--muted);
   padding-top: 12px;
 }
-.sum b { color: var(--ink); font-weight: 700; }
+.sum b { color: var(--ink); font-weight: inherit; }
 
 /* Won state */
 .card.is-won {
@@ -492,7 +492,6 @@ a:hover { text-decoration-color: var(--ink); }
 }
 .thanks-value {
   color: var(--ink);
-  font-weight: 700;
   text-align: right;
   word-break: break-word;
 }
