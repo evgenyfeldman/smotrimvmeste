@@ -9,97 +9,98 @@
   <script src="app.js" defer></script>
 </head>
 <body>
-  <header class="hero">
-    <h1>Смотрим вместе с&nbsp;Евгением Фельдманом</h1>
-    <p class="lead">
-      В истории американской политики полно событий, которые важны, общеизвестны и запечатлены на видео — но которые мало кто видел целиком. Я знаю множество баек про дебаты Кеннеди и Никсона, речи Рейгана, сделавшее Трампа звездой реалити-шоу, но и сам не смотрел их от начала до конца. Давайте сделаем это вместе — а я для этих закрытых стримов подготовлю видео и подробные рассказы, чтобы контекст был яснее, а вечер интереснее.
-    </p>
-    <div class="rules">
-      <p>
-        Билет на просмотр можно получить за донат от €7. Сумма каждого доната — это ещё и голос за одно из предложенных видео. Чем больше вы донатите, тем быстрее я проведу эфир. Как только видео наберёт €100 донатов, я объявлю дату эфира и пришлю ссылку всем участникам. Подписчики старших уровней моего <a href="https://www.patreon.com/cw/evgenyfeldman" target="_blank" rel="noopener">«Патреона»</a> получают билеты бесплатно!
-      </p>
-      <p>❗️ Для просмотра надо хорошо знать английский язык.</p>
-    </div>
-  </header>
-
-  <main class="grid" id="videos">
-    <!-- карточки рендерятся ниже из data-атрибутов; для шага 1 — моковые суммы -->
-
-    <article class="card" data-id="1960" data-raised="43">
-      <div class="card-image" aria-hidden="true" style="background-image:url('images/1960.jpg');background-position:center 25%"></div>
-      <div class="card-body">
-        <h2>1960: Дебаты Кеннеди и Никсона</h2>
-        <p class="desc">Первые в истории президентские дебаты, которые транслировали по телевидению. Легендарный финт Кеннеди с гримом, обстоятельные речи и жаркий спор о Холодной войне!</p>
-        <div class="progress" aria-hidden="true"><span style="width:43%"></span></div>
-        <div class="row">
-          <span class="sum"><b>€43</b> из €100</span>
-          <button class="vote" type="button" data-video="1960">Купить билет и проголосовать €7+</button>
-        </div>
+  <div class="container">
+    <header class="hero">
+      <h1>Смотрим вместе с&nbsp;Евгением Фельдманом</h1>
+      <p class="lead"><span class="drop-cap">В</span>истории американской политики полно событий, которые важны, общеизвестны и запечатлены на видео — но которые мало кто видел целиком. Я знаю множество баек про дебаты Кеннеди и Никсона, речи Рейгана, сделавшее Трампа звездой реалити-шоу, но и сам не смотрел их от начала до конца. Давайте сделаем это вместе — а я для этих закрытых стримов подготовлю видео и подробные рассказы, чтобы контекст был яснее, а вечер интереснее.</p>
+      <div class="rules">
+        <p>Билет на просмотр можно получить за донат от €7. Сумма каждого доната — это ещё и голос за одно из предложенных видео. Чем больше вы донатите, тем быстрее я проведу эфир. Как только видео наберёт €100 донатов, я объявлю дату эфира и пришлю ссылку всем участникам. Подписчики старших уровней моего <a href="https://www.patreon.com/cw/evgenyfeldman" target="_blank" rel="noopener">«Патреона»</a> получают билеты бесплатно!</p>
+        <p>Для просмотра надо хорошо знать английский язык.</p>
       </div>
-    </article>
+    </header>
 
-    <article class="card" data-id="1992" data-raised="12">
-      <div class="card-image" aria-hidden="true" style="background-image:url('images/1992.jpg');background-position:center bottom"></div>
-      <div class="card-body">
-        <h2>1992: Речь Патрика Бьюкенена</h2>
-        <p class="desc">Бьюкэнэн проиграл праймериз Бушу, но на съезде Республиканской партии именно он определил будущее. Жёсткая речь с объявлением демократам культурной войны теперь считается истоком трампизма.</p>
-        <div class="progress" aria-hidden="true"><span style="width:12%"></span></div>
-        <div class="row">
-          <span class="sum"><b>€12</b> из €100</span>
-          <button class="vote" type="button" data-video="1992">Купить билет и проголосовать €7+</button>
-        </div>
-      </div>
-    </article>
+    <main class="grid" id="videos">
 
-    <article class="card" data-id="apprentice" data-raised="55">
-      <div class="card-image" aria-hidden="true" style="background-image:url('images/apprentice.jpg');background-position:center 35%"></div>
-      <div class="card-body">
-        <h2>2004: The Apprentice</h2>
-        <p class="desc">Реалити-шоу, которое сделало Трампа поп-иконой задолго до Белого дома. Для совместного просмотра я выберу самый интересный эпизод из первых сезонов!</p>
-        <div class="progress" aria-hidden="true"><span style="width:55%"></span></div>
-        <div class="row">
-          <span class="sum"><b>€55</b> из €100</span>
-          <button class="vote" type="button" data-video="apprentice">Купить билет и проголосовать €7+</button>
-        </div>
-      </div>
-    </article>
-
-    <article class="card is-won" data-id="2016" data-raised="127" data-preview="1" data-air-date="30 мая · 21:00 Мск / 14:00 НЙ">
-      <div class="card-image" aria-hidden="true" style="background-image:url('images/2016.jpg');background-position:center top"></div>
-      <div class="card-body">
-        <h2>2016: Дебаты Трампа и Клинтон</h2>
-        <p class="desc">Обещания посадить Клинтон и её ответные атаки из-за конспирологических теорий — вечер, когда декорум в американской политике закончился.</p>
-        <div class="progress" aria-hidden="true"><span style="width:100%"></span></div>
-        <div class="row" data-won="1">
-          <div class="won-info">
-            <div class="won-date">Эфир 30 мая · 21:00 Мск / 14:00 НЙ</div>
-            <div class="sum sum-won">Необходимая сумма собрана! Вы ещё можете купить билет</div>
-          </div>
-          <button class="vote" type="button" data-video="2016">Купить билет €8+</button>
-        </div>
-      </div>
-    </article>
-  </main>
-
-  <section class="past">
-    <h2 class="past-title">Прошлые эфиры</h2>
-    <div class="past-grid">
-      <article class="card card-past is-past" data-id="2008" data-preview="1" data-past-date="7 мая">
-        <div class="card-image" aria-hidden="true" style="background-image:url('images/2008.jpg');background-size:115% auto;background-position:center 30%"></div>
+      <article class="card is-won" data-id="2016" data-raised="127" data-preview="1" data-air-date="30 мая · 21:00 Мск / 14:00 НЙ">
+        <div class="card-year">2016</div>
         <div class="card-body">
-          <h3>2008: Дебаты Обамы и Маккейна</h3>
-          <p class="desc">Возможно, последние нормальные дебаты в американской истории.</p>
-          <p class="past-meta">Эфир проведён 7 мая</p>
-          <div class="row">
-            <button class="vote" type="button" data-video="2008">Купить запись €5+</button>
+          <div class="card-image" aria-hidden="true" style="background-image:url('images/2016.jpg');background-position:center top"></div>
+          <h2>Дебаты Трампа и Клинтон</h2>
+          <p class="desc">Обещания посадить Клинтон и её ответные атаки из-за конспирологических теорий — вечер, когда декорум в американской политике закончился.</p>
+          <div class="progress" aria-hidden="true"><span style="width:100%"></span></div>
+          <div class="row" data-won="1">
+            <div class="won-info">
+              <div class="won-date">Эфир 30 мая · 21:00 Мск / 14:00 НЙ</div>
+              <div class="sum sum-won">Необходимая сумма собрана! Вы ещё можете купить билет</div>
+            </div>
+            <button class="vote" type="button" data-video="2016">Купить билет €8+</button>
           </div>
         </div>
       </article>
-    </div>
-  </section>
 
-  <footer class="foot">
-    <p>Оплата через Stripe Checkout. Email используется только для отправки ссылки на закрытый эфир с выигравшим видео.</p>
-  </footer>
+      <article class="card" data-id="1960" data-raised="43">
+        <div class="card-year">1960</div>
+        <div class="card-body">
+          <div class="card-image" aria-hidden="true" style="background-image:url('images/1960.jpg');background-position:center 25%"></div>
+          <h2>Дебаты Кеннеди и Никсона</h2>
+          <p class="desc">Первые в истории президентские дебаты, которые транслировали по телевидению. Легендарный финт Кеннеди с гримом, обстоятельные речи и жаркий спор о Холодной войне!</p>
+          <div class="progress" aria-hidden="true"><span style="width:43%"></span></div>
+          <div class="row">
+            <span class="sum"><b>€43</b> из €100</span>
+            <button class="vote" type="button" data-video="1960">Купить билет и проголосовать €7+</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-id="1992" data-raised="12">
+        <div class="card-year">1992</div>
+        <div class="card-body">
+          <div class="card-image" aria-hidden="true" style="background-image:url('images/1992.jpg');background-position:center bottom"></div>
+          <h2>Речь Патрика Бьюкенена</h2>
+          <p class="desc">Бьюкэнэн проиграл праймериз Бушу, но на съезде Республиканской партии именно он определил будущее. Жёсткая речь с объявлением демократам культурной войны теперь считается истоком трампизма.</p>
+          <div class="progress" aria-hidden="true"><span style="width:12%"></span></div>
+          <div class="row">
+            <span class="sum"><b>€12</b> из €100</span>
+            <button class="vote" type="button" data-video="1992">Купить билет и проголосовать €7+</button>
+          </div>
+        </div>
+      </article>
+
+      <article class="card" data-id="apprentice" data-raised="55">
+        <div class="card-year">2004</div>
+        <div class="card-body">
+          <div class="card-image" aria-hidden="true" style="background-image:url('images/apprentice.jpg');background-position:center 35%"></div>
+          <h2>The Apprentice</h2>
+          <p class="desc">Реалити-шоу, которое сделало Трампа поп-иконой задолго до Белого дома. Для совместного просмотра я выберу самый интересный эпизод из первых сезонов!</p>
+          <div class="progress" aria-hidden="true"><span style="width:55%"></span></div>
+          <div class="row">
+            <span class="sum"><b>€55</b> из €100</span>
+            <button class="vote" type="button" data-video="apprentice">Купить билет и проголосовать €7+</button>
+          </div>
+        </div>
+      </article>
+
+    </main>
+
+    <section class="past">
+      <div class="section-mark">Архив</div>
+      <article class="card card-past is-past" data-id="2008" data-preview="1" data-past-date="7 мая">
+        <div class="past-img" aria-hidden="true" style="background-image:url('images/2008.jpg');background-position:center 30%"></div>
+        <div class="past-body">
+          <p class="past-year">2008</p>
+          <h3>Дебаты Обамы и Маккейна</h3>
+          <p class="desc">Возможно, последние нормальные дебаты в американской истории.</p>
+          <p class="past-meta">Эфир проведён 7 мая</p>
+        </div>
+        <div class="row">
+          <button class="vote" type="button" data-video="2008">Купить запись €5+</button>
+        </div>
+      </article>
+    </section>
+
+    <footer class="foot">
+      <p>Оплата через Stripe Checkout. Email используется только для отправки ссылки на закрытый эфир с выигравшим видео.</p>
+    </footer>
+  </div>
 </body>
 </html>
