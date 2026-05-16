@@ -32,12 +32,12 @@
       document.getElementById('progress-bar').style.width = pct + '%';
 
       const thisCents = Math.round((session.eur || 0) * 100);
-      const justCrossed = cents >= 10000 && (cents - thisCents) < 10000;
-      if (justCrossed) {
-        const note = document.getElementById('note');
-        if (note) {
-          note.innerHTML = 'Благодаря вашему донату видео собрало €100 — совсем скоро я назначу эфир и пришлю вам на почту ссылку. Если вы почему-то не получите ссылку — смело пишите мне <a href="https://t.me/feldmanevgeny" target="_blank" rel="noopener">в личку</a>.';
-        }
+      const note = document.getElementById('note');
+      if (note && cents >= 10000) {
+        const justCrossed = (cents - thisCents) < 10000;
+        note.innerHTML = justCrossed
+          ? 'Благодаря вашему донату видео собрало €100 — совсем скоро я назначу эфир и пришлю вам на почту ссылку. Если вы почему-то не получите ссылку — смело пишите мне <a href="https://t.me/feldmanevgeny" target="_blank" rel="noopener">в личку</a>.'
+          : 'Это видео уже собрало необходимую сумму, и эфир назначен. Совсем скоро я пришлю вам на почту ссылку на трансляцию. Если это почему-то не произошло — смело пишите мне <a href="https://t.me/feldmanevgeny" target="_blank" rel="noopener">в личку</a>.';
       }
     }
 
