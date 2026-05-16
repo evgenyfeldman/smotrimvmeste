@@ -19,8 +19,7 @@
       <span>Оплата отменена. Попробуй снова</span>
       <button type="button" aria-label="Закрыть">×</button>
     `;
-    const hero = document.querySelector('.hero');
-    hero?.insertAdjacentElement('afterend', banner);
+    document.body.appendChild(banner);
     banner.querySelector('button').addEventListener('click', () => banner.remove());
     history.replaceState(null, '', location.pathname);
   }
