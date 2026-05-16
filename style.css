@@ -99,6 +99,7 @@ a:hover { text-decoration-color: var(--ink); }
   border-bottom: 1px solid var(--rule);
 }
 .card:last-of-type { border-bottom: 0; }
+.grid > .card:last-child { border-bottom: 0; }
 
 .card-year {
   font-size: 42px;
