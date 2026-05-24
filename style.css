@@ -57,6 +57,14 @@ a:hover { text-decoration-color: var(--ink); }
   color: var(--ink);
 }
 
+.author-photo {
+  float: right;
+  width: 200px;
+  margin: 6px 0 8px 24px;
+  border: 1px solid var(--ink);
+  display: block;
+}
+
 .drop-cap {
   font-family: 'Hoefler Text', 'Charter', 'Palatino Linotype', 'Georgia', serif;
   font-weight: 700;
