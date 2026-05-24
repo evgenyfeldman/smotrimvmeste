@@ -61,7 +61,6 @@ a:hover { text-decoration-color: var(--ink); }
   float: right;
   width: 200px;
   margin: 6px 0 8px 24px;
-  border: 1px solid var(--ink);
   display: block;
 }
 
