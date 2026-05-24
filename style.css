@@ -528,6 +528,7 @@ a:hover { text-decoration-color: var(--ink); }
   .hero h1 { font-size: 36px; }
   .lead { font-size: 17px; }
   .drop-cap { font-size: 72px; margin: 12px 10px -2px 0; }
+  .author-photo { width: 130px; margin: 4px 0 6px 14px; }
   .rules { font-size: 15px; }
   .card { grid-template-columns: 60px 1fr; gap: 16px; padding: 24px 0; }
   .card-year { font-size: 28px; padding-top: 6px; }
