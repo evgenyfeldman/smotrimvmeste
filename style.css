@@ -537,8 +537,11 @@ a:hover { text-decoration-color: var(--ink); }
   .drop-cap { font-size: 72px; margin: 12px 10px -2px 0; }
   .author-photo {
     float: none;
-    width: 180px;
-    margin: 0 0 16px;
+    width: 100%;
+    max-height: 360px;
+    object-fit: cover;
+    object-position: center 30%;
+    margin: 0 0 20px;
     display: block;
   }
   .rules { font-size: 15px; }
