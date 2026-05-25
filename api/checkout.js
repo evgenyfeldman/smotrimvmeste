@@ -11,10 +11,7 @@ const GOAL_CENTS = 10000;
 // Превью/ручные оверрайды состояний. Если video_id здесь — берём это состояние,
 // иначе вычисляем по Stripe-итогам (>=€100 → won, иначе open).
 // Перед релизом очистить или подменить логикой из Sheets/конфига.
-const STATE_OVERRIDES = {
-  '2008': 'past',
-  '2016': 'won',
-};
+const STATE_OVERRIDES = {};
 
 async function sumForVideo(stripe, videoId) {
   let total = 0;
