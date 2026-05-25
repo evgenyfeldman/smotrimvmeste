@@ -16,6 +16,10 @@ const TAGS = {
 };
 const GOAL_CENTS = 10000;
 
+// Дедуп event.id в памяти (переживёт warm-инстанс, не переживёт cold start —
+// но защитит от типичных stripe-ретраев в пределах нескольких секунд).
+let processedEvents = new Set();
+
 function rawBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = [];
@@ -107,54 +111,70 @@ module.exports = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    const videoId = session.metadata?.video_id;
-    const videoName = VIDEOS[videoId] || videoId || 'unknown';
-    const eur = (session.amount_total || 0) / 100;
-    const email =
-      session.customer_details?.email || session.customer_email || 'нет email';
+  // Сразу ACK Stripe'у, чтобы не было ретраев из-за медленной нашей работы.
+  // Дальше функция продолжит выполнение в фоне (Vercel держит ~10 сек на Hobby).
+  res.status(200).json({ received: true });
 
-    const tag = TAGS[videoId] || videoId;
-    const cleanName = videoName.replace(/\s*\(\d{4}\)$/, '');
-    await appendToSheet({
+  if (event.type !== 'checkout.session.completed') return;
+
+  // Дедуп по event.id
+  if (processedEvents.has(event.id)) {
+    console.warn('duplicate event, skipping', event.id);
+    return;
+  }
+  processedEvents.add(event.id);
+  if (processedEvents.size > 200) {
+    processedEvents = new Set(Array.from(processedEvents).slice(-100));
+  }
+
+  const session = event.data.object;
+  const videoId = session.metadata?.video_id;
+  const videoName = VIDEOS[videoId] || videoId || 'unknown';
+  const eur = (session.amount_total || 0) / 100;
+  const email =
+    session.customer_details?.email || session.customer_email || 'нет email';
+
+  const tag = TAGS[videoId] || videoId;
+  const cleanName = videoName.replace(/\s*\(\d{4}\)$/, '');
+
+  // Sheets и подсчёт суммы — независимы, гоняем параллельно
+  const [, totalCents] = await Promise.all([
+    appendToSheet({
       video: `${tag} | ${cleanName}`,
       email,
       eur,
       session_id: session.id,
-    });
-
-    let totalEur = null;
-    let totalCents = null;
-    try {
-      totalCents = await sumForVideo(stripe, videoId);
-      totalEur = totalCents / 100;
-    } catch (e) {
+    }),
+    sumForVideo(stripe, videoId).catch((e) => {
       console.error('sum failed', e);
-    }
+      return null;
+    }),
+  ]);
 
-    const escape = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+  const escape = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
 
-    let text =
-      `<b>💸 Новый донат</b>\n` +
-      `Видео: <b>${escape(videoName)}</b>\n` +
-      `Сумма: <b>€${eur}</b>\n` +
-      `Email: <code>${escape(email)}</code>`;
-    if (totalEur !== null) {
-      text += `\n\nВсего по видео: <b>€${totalEur}</b> из €100`;
-    }
-    await tg(text);
-
-    if (totalCents !== null && totalCents >= GOAL_CENTS && totalCents - (session.amount_total || 0) < GOAL_CENTS) {
-      await tg(
-        `🏆 <b>ВИДЕО СОБРАЛО €100!</b>\n` +
-        `<b>${escape(videoName)}</b>\n` +
-        `Пора готовить рассылку доступа всем, кто проголосовал.`
-      );
-    }
+  let text =
+    `<b>💸 Новый донат</b>\n` +
+    `Видео: <b>${escape(videoName)}</b>\n` +
+    `Сумма: <b>€${eur}</b>\n` +
+    `Email: <code>${escape(email)}</code>`;
+  if (totalCents !== null) {
+    const totalEur = totalCents / 100;
+    text += `\n\nВсего по видео: <b>€${totalEur}</b> из €100`;
   }
+  await tg(text);
 
-  return res.status(200).json({ received: true });
+  if (
+    totalCents !== null &&
+    totalCents >= GOAL_CENTS &&
+    totalCents - (session.amount_total || 0) < GOAL_CENTS
+  ) {
+    await tg(
+      `🏆 <b>ВИДЕО СОБРАЛО €100!</b>\n` +
+      `<b>${escape(videoName)}</b>\n` +
+      `Пора готовить рассылку доступа всем, кто проголосовал.`
+    );
+  }
 };
 
 module.exports.config = { api: { bodyParser: false } };
