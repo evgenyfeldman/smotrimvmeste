@@ -8,6 +8,26 @@ const VIDEOS = {
   'apprentice': 'The Apprentice (2004)',
 };
 
+async function totalForVideo(stripe, videoId) {
+  let total = 0;
+  let starting_after;
+  for (let i = 0; i < 50; i++) {
+    const resp = await stripe.checkout.sessions.list({
+      limit: 100,
+      status: 'complete',
+      starting_after,
+    });
+    for (const s of resp.data) {
+      if (s.metadata?.video_id === videoId && s.payment_status === 'paid') {
+        total += s.amount_total || 0;
+      }
+    }
+    if (!resp.has_more) break;
+    starting_after = resp.data[resp.data.length - 1].id;
+  }
+  return total;
+}
+
 module.exports = async (req, res) => {
   try {
     const sid = req.query?.sid;
@@ -24,8 +44,15 @@ module.exports = async (req, res) => {
     const eur = (session.amount_total || 0) / 100;
     const paid = session.payment_status === 'paid';
 
-    // Не кэшируем: сразу после оплаты Stripe может вернуть частично заполненную сессию;
-    // если бы мы это закэшировали — все последующие запросы для того же sid отдавали бы пустоту.
+    // Считаем общую сумму по этому видео свежо — без кэшей, чтобы success-страница
+    // сразу показала актуальную цифру, включая только что прошедший платёж.
+    let totalCents = null;
+    try {
+      totalCents = await totalForVideo(stripe, videoId);
+    } catch (e) {
+      console.error('totalForVideo failed', e);
+    }
+
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({
       paid,
@@ -33,6 +60,7 @@ module.exports = async (req, res) => {
       video_name: videoName,
       email,
       eur,
+      video_total_cents: totalCents,
     });
   } catch (e) {
     console.error('session error', e);
