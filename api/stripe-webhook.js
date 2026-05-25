@@ -60,17 +60,35 @@ async function appendToSheet(row) {
     console.warn('sheets env missing');
     return;
   }
-  try {
-    const r = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ secret, ...row }),
-      redirect: 'follow',
-    });
-    if (!r.ok) console.error('sheets non-200', r.status, await r.text());
-  } catch (e) {
-    console.error('sheets error', e);
+  const body = JSON.stringify({ secret, ...row });
+  const attempts = [0, 1500];
+  let lastErr = null;
+  for (let i = 0; i < attempts.length; i++) {
+    if (attempts[i] > 0) await new Promise((r) => setTimeout(r, attempts[i]));
+    try {
+      const r = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        redirect: 'follow',
+      });
+      if (r.ok) return;
+      lastErr = `non-200 ${r.status}: ${await r.text()}`;
+      console.error(`sheets attempt ${i + 1} failed`, lastErr);
+    } catch (e) {
+      lastErr = e?.message || String(e);
+      console.error(`sheets attempt ${i + 1} error`, e);
+    }
   }
+  // Все попытки исчерпаны — кричим в Telegram, чтобы строку добили руками.
+  await tg(
+    `⚠️ <b>Sheets не записал донат</b>\n` +
+    `${row.video}\n` +
+    `Email: <code>${row.email}</code>\n` +
+    `Сумма: €${row.eur}\n` +
+    `Session: <code>${row.session_id}</code>\n` +
+    `Ошибка: ${String(lastErr).slice(0, 200)}`
+  ).catch(() => {});
 }
 
 async function sumForVideoFallback(stripe, videoId) {
