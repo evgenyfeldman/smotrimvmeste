@@ -13,7 +13,7 @@
   // Session-данные и общая сумма по видео — независимы, грузим параллельно.
   // Сначала показываем то что пришло первым, чтобы пользователь не сидел перед прочерками.
   const sessionPromise = fetch('/api/session?sid=' + encodeURIComponent(sid)).then(r => r.ok ? r.json() : null);
-  const totalsPromise = fetch('/api/totals').then(r => r.ok ? r.json() : null);
+  const totalsPromise = fetch('/api/totals?fresh=1').then(r => r.ok ? r.json() : null);
 
   let session = null;
   let totalsData = null;

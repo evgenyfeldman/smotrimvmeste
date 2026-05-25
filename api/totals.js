@@ -68,11 +68,18 @@ async function getTotals(stripe) {
 module.exports = async (req, res) => {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const totals = await getTotals(stripe);
-    // Vercel CDN: 60 сек свежее, до 10 минут — отдаём stale и фоном обновляем
-    // (Vercel-specific заголовок, потому что обычный Cache-Control он переписывает)
-    res.setHeader('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
-    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    const fresh = req.query?.fresh === '1';
+    let totals;
+    if (fresh) {
+      // Используется success-страницей: пользователь только что заплатил, показываем без кэша.
+      totals = await computeTotals(stripe);
+      cache = { computed: Date.now(), totals };
+      res.setHeader('Cache-Control', 'no-store');
+    } else {
+      totals = await getTotals(stripe);
+      res.setHeader('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
+      res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+    }
     return res.status(200).json({ totals });
   } catch (e) {
     console.error('totals error', e);
