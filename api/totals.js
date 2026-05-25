@@ -2,10 +2,11 @@ const Stripe = require('stripe');
 
 const VIDEO_IDS = ['1960', '1992', '2008', '2016', 'apprentice'];
 
-// Кэш сумм в памяти warm-инстанса. Раз в минуту — пересчёт из Stripe.
+// Кэш сумм в памяти warm-инстанса. Раз в 5 секунд — пересчёт из Stripe.
+// Короткий TTL чтобы после оплаты success-страница быстро увидела новую сумму.
 let cache = { computed: 0, totals: null };
 let inflight = null;
-const TTL_MS = 60 * 1000;
+const TTL_MS = 5 * 1000;
 
 async function computeTotals(stripe) {
   const totals = Object.fromEntries(VIDEO_IDS.map((v) => [v, 0]));
@@ -50,8 +51,8 @@ module.exports = async (req, res) => {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const totals = await getTotals(stripe);
-    // CDN: 10 сек свежее, до минуты — отдаём stale и фоном обновляем
-    res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=60');
+    // CDN: 3 сек свежее, до 30 сек — отдаём stale и фоном обновляем
+    res.setHeader('Cache-Control', 's-maxage=3, stale-while-revalidate=30');
     return res.status(200).json({ totals });
   } catch (e) {
     console.error('totals error', e);
