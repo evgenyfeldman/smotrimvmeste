@@ -6,6 +6,7 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@vercel/kv": "^3.0.0",
     "stripe": "^17.3.0"
   }
 }

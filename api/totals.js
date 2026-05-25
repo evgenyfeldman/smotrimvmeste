@@ -1,15 +1,14 @@
 const Stripe = require('stripe');
+const kvStore = require('./_kv');
 
-const VIDEO_IDS = ['1960', '1992', '2008', '2016', 'apprentice'];
+const VIDEO_IDS = kvStore.VIDEO_IDS;
 
-// Кэш сумм в памяти warm-инстанса. Большой TTL (5 минут) для скорости главной страницы.
-// При оплате success-страница использует свой механизм (см. /api/session) и видит свежие цифры,
-// поэтому здесь приоритет — скорость, а не свежесть.
-let cache = { computed: 0, totals: null };
+// Локальный кэш в памяти warm-инстанса. Используется если KV недоступен или как ускоритель.
+let memCache = { computed: 0, totals: null };
 let inflight = null;
 const TTL_MS = 5 * 60 * 1000;
 
-async function computeTotals(stripe) {
+async function computeFromStripe(stripe) {
   const totals = Object.fromEntries(VIDEO_IDS.map((v) => [v, 0]));
   let starting_after;
   for (let i = 0; i < 50; i++) {
@@ -30,33 +29,41 @@ async function computeTotals(stripe) {
   return totals;
 }
 
-async function getTotals(stripe) {
-  // Если есть кэш и он свежий — мгновенный ответ
-  if (cache.totals && Date.now() - cache.computed < TTL_MS) {
-    return cache.totals;
+async function getTotals(stripe, { bypassCache } = {}) {
+  // Если KV подключён — основной источник правды это он.
+  if (kvStore.isEnabled()) {
+    let totals = await kvStore.readTotals();
+    if (!totals) {
+      // KV пуст — инициализируем из Stripe (одноразово)
+      totals = await computeFromStripe(stripe);
+      await kvStore.writeTotals(totals);
+    }
+    return totals;
   }
-  // Если есть кэш (пусть и протухший), а пересчёт ещё не идёт — запускаем фоном, отдаём старое
-  if (cache.totals && !inflight) {
+
+  // Фоллбэк: память warm-инстанса + полный пересчёт из Stripe
+  if (!bypassCache && memCache.totals && Date.now() - memCache.computed < TTL_MS) {
+    return memCache.totals;
+  }
+  if (!bypassCache && memCache.totals && !inflight) {
     inflight = (async () => {
       try {
-        const totals = await computeTotals(stripe);
-        cache = { computed: Date.now(), totals };
+        const totals = await computeFromStripe(stripe);
+        memCache = { computed: Date.now(), totals };
         return totals;
       } finally {
         inflight = null;
       }
     })();
-    return cache.totals;
+    return memCache.totals;
   }
-  // Если идёт пересчёт — присоединяемся
-  if (inflight) {
-    return cache.totals || inflight;
+  if (inflight && !bypassCache) {
+    return memCache.totals || inflight;
   }
-  // Совсем нет данных — придётся подождать
   inflight = (async () => {
     try {
-      const totals = await computeTotals(stripe);
-      cache = { computed: Date.now(), totals };
+      const totals = await computeFromStripe(stripe);
+      memCache = { computed: Date.now(), totals };
       return totals;
     } finally {
       inflight = null;
@@ -68,15 +75,16 @@ async function getTotals(stripe) {
 module.exports = async (req, res) => {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const fresh = req.query?.fresh === '1';
-    let totals;
-    if (fresh) {
-      // Используется success-страницей: пользователь только что заплатил, показываем без кэша.
-      totals = await computeTotals(stripe);
-      cache = { computed: Date.now(), totals };
+    const bypassCache = req.query?.fresh === '1';
+    const totals = await getTotals(stripe, { bypassCache });
+
+    if (kvStore.isEnabled()) {
+      // KV — источник правды и сам мгновенный, кэшировать на CDN не имеет смысла:
+      // тогда бы стейл-данные пересиливали свежие из KV.
+      res.setHeader('Cache-Control', 'no-store');
+    } else if (bypassCache) {
       res.setHeader('Cache-Control', 'no-store');
     } else {
-      totals = await getTotals(stripe);
       res.setHeader('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
       res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     }

@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const kvStore = require('./_kv');
 
 const VIDEOS = {
   '1960': 'Дебаты Кеннеди и Никсона (1960)',
@@ -16,8 +17,7 @@ const TAGS = {
 };
 const GOAL_CENTS = 10000;
 
-// Дедуп event.id в памяти (переживёт warm-инстанс, не переживёт cold start —
-// но защитит от типичных stripe-ретраев в пределах нескольких секунд).
+// Резервный дедуп в памяти на случай если KV не подключён.
 let processedEvents = new Set();
 
 function rawBody(req) {
@@ -73,7 +73,7 @@ async function appendToSheet(row) {
   }
 }
 
-async function sumForVideo(stripe, videoId) {
+async function sumForVideoFallback(stripe, videoId) {
   let total = 0;
   let starting_after;
   for (let i = 0; i < 50; i++) {
@@ -115,11 +115,21 @@ module.exports = async (req, res) => {
     return res.status(200).json({ received: true });
   }
 
-  // Дедуп по event.id — пропускаем уже обработанные.
-  // Важно: добавляем в set только ПОСЛЕ успешной обработки (см. ниже),
-  // чтобы недосчитанная попытка не блокировала ретрай Stripe.
-  if (processedEvents.has(event.id)) {
-    console.warn('duplicate event, skipping', event.id);
+  // Дедуп события. KV — приоритетнее (переживает cold start). Память — фоллбэк.
+  if (kvStore.isEnabled()) {
+    try {
+      const claimed = await kvStore.tryClaimEvent(event.id);
+      if (!claimed) {
+        console.warn('duplicate event (kv), skipping', event.id);
+        return res.status(200).json({ received: true });
+      }
+    } catch (e) {
+      console.error('kv dedup failed, falling back to memory', e);
+      if (processedEvents.has(event.id)) {
+        return res.status(200).json({ received: true });
+      }
+    }
+  } else if (processedEvents.has(event.id)) {
     return res.status(200).json({ received: true });
   }
 
@@ -127,6 +137,7 @@ module.exports = async (req, res) => {
   const videoId = session.metadata?.video_id;
   const videoName = VIDEOS[videoId] || videoId || 'unknown';
   const eur = (session.amount_total || 0) / 100;
+  const amountCents = session.amount_total || 0;
   const email =
     session.customer_details?.email || session.customer_email || 'нет email';
 
@@ -134,19 +145,25 @@ module.exports = async (req, res) => {
   const cleanName = videoName.replace(/\s*\(\d{4}\)$/, '');
 
   try {
-    // Sheets и подсчёт суммы — независимы, гоняем параллельно
-    const [, totalCents] = await Promise.all([
-      appendToSheet({
-        video: `${tag} | ${cleanName}`,
-        email,
-        eur,
-        session_id: session.id,
-      }),
-      sumForVideo(stripe, videoId).catch((e) => {
-        console.error('sum failed', e);
-        return null;
-      }),
-    ]);
+    // KV-инкремент тотала идёт параллельно с Sheets. Telegram — после, чтобы цифру в сообщении взять актуальную.
+    const incrementPromise = kvStore.isEnabled()
+      ? kvStore.incrementTotal(videoId, amountCents).catch((e) => {
+          console.error('kv increment failed', e);
+          return null;
+        })
+      : sumForVideoFallback(stripe, videoId).catch((e) => {
+          console.error('sum fallback failed', e);
+          return null;
+        });
+
+    const sheetsPromise = appendToSheet({
+      video: `${tag} | ${cleanName}`,
+      email,
+      eur,
+      session_id: session.id,
+    });
+
+    const [, totalCents] = await Promise.all([sheetsPromise, incrementPromise]);
 
     const escape = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
 
@@ -155,7 +172,7 @@ module.exports = async (req, res) => {
       `Видео: <b>${escape(videoName)}</b>\n` +
       `Сумма: <b>€${eur}</b>\n` +
       `Email: <code>${escape(email)}</code>`;
-    if (totalCents !== null) {
+    if (totalCents !== null && totalCents !== undefined) {
       const totalEur = totalCents / 100;
       text += `\n\nВсего по видео: <b>€${totalEur}</b> из €100`;
     }
@@ -163,8 +180,9 @@ module.exports = async (req, res) => {
 
     if (
       totalCents !== null &&
+      totalCents !== undefined &&
       totalCents >= GOAL_CENTS &&
-      totalCents - (session.amount_total || 0) < GOAL_CENTS
+      totalCents - amountCents < GOAL_CENTS
     ) {
       await tg(
         `🏆 <b>ВИДЕО СОБРАЛО €100!</b>\n` +
@@ -174,14 +192,13 @@ module.exports = async (req, res) => {
       );
     }
 
-    // Маркируем как обработанное — только после успеха
+    // Маркируем в памяти на случай ретрая в пределах warm-инстанса
     processedEvents.add(event.id);
     if (processedEvents.size > 200) {
       processedEvents = new Set(Array.from(processedEvents).slice(-100));
     }
   } catch (e) {
     console.error('webhook processing error', e);
-    // Не отвечаем 200 — Stripe ретрайнет, и в следующий раз дедуп нас пропустит
     return res.status(500).json({ error: 'processing_failed' });
   }
 
