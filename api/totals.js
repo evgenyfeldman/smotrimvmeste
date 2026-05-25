@@ -24,7 +24,7 @@ module.exports = async (req, res) => {
       starting_after = resp.data[resp.data.length - 1].id;
     }
 
-    res.setHeader('Cache-Control', 's-maxage=10, stale-while-revalidate=30');
+    res.setHeader('Cache-Control', 's-maxage=3, stale-while-revalidate=10');
     return res.status(200).json({ totals });
   } catch (e) {
     console.error('totals error', e);

@@ -7,31 +7,11 @@ const VIDEOS = {
   '2016': 'Дебаты Трампа и Клинтон (2016)',
   'apprentice': 'The Apprentice (2004)',
 };
-const GOAL_CENTS = 10000;
-// Превью/ручные оверрайды состояний. Если video_id здесь — берём это состояние,
-// иначе вычисляем по Stripe-итогам (>=€100 → won, иначе open).
-// Перед релизом очистить или подменить логикой из Sheets/конфига.
+// Ручные оверрайды состояний — задаются вручную когда видео переходит из «сбор» в «эфир назначен» или «архив».
+// Формат: { 'video_id': 'past' | 'won' }. Иначе по умолчанию — 'open'.
+// Раньше тут была автоматическая проверка через подсчёт Stripe-сессий, но это добавляло
+// 1-2 сек на каждое открытие Stripe Checkout — для скорости отказались.
 const STATE_OVERRIDES = {};
-
-async function sumForVideo(stripe, videoId) {
-  let total = 0;
-  let starting_after;
-  for (let i = 0; i < 50; i++) {
-    const resp = await stripe.checkout.sessions.list({
-      limit: 100,
-      status: 'complete',
-      starting_after,
-    });
-    for (const s of resp.data) {
-      if (s.metadata?.video_id === videoId && s.payment_status === 'paid') {
-        total += s.amount_total || 0;
-      }
-    }
-    if (!resp.has_more) break;
-    starting_after = resp.data[resp.data.length - 1].id;
-  }
-  return total;
-}
 
 module.exports = async (req, res) => {
   try {
@@ -54,18 +34,8 @@ module.exports = async (req, res) => {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const origin = req.headers.origin || `https://${req.headers.host}`;
 
-    // Определяем состояние видео: past (эфир прошёл), won (собрано ≥€100), open
-    let state = STATE_OVERRIDES[video_id];
-    if (!state) {
-      state = 'open';
-      try {
-        const total = await sumForVideo(stripe, video_id);
-        if (total >= GOAL_CENTS) state = 'won';
-      } catch (e) {
-        console.error('total computation failed, treating as open', e);
-      }
-    }
-
+    // Состояние — из ручной мапы, иначе считаем open. Никаких медленных запросов.
+    const state = STATE_OVERRIDES[video_id] || 'open';
     const minEur = state === 'past' ? 5 : (state === 'won' ? 8 : 7);
     if (eur < minEur) {
       return res.status(400).json({ error: 'invalid_amount', min: minEur });
