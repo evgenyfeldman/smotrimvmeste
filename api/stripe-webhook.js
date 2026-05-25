@@ -111,20 +111,16 @@ module.exports = async (req, res) => {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Сразу ACK Stripe'у, чтобы не было ретраев из-за медленной нашей работы.
-  // Дальше функция продолжит выполнение в фоне (Vercel держит ~10 сек на Hobby).
-  res.status(200).json({ received: true });
+  if (event.type !== 'checkout.session.completed') {
+    return res.status(200).json({ received: true });
+  }
 
-  if (event.type !== 'checkout.session.completed') return;
-
-  // Дедуп по event.id
+  // Дедуп по event.id — пропускаем уже обработанные.
+  // Важно: добавляем в set только ПОСЛЕ успешной обработки (см. ниже),
+  // чтобы недосчитанная попытка не блокировала ретрай Stripe.
   if (processedEvents.has(event.id)) {
     console.warn('duplicate event, skipping', event.id);
-    return;
-  }
-  processedEvents.add(event.id);
-  if (processedEvents.size > 200) {
-    processedEvents = new Set(Array.from(processedEvents).slice(-100));
+    return res.status(200).json({ received: true });
   }
 
   const session = event.data.object;
@@ -137,44 +133,58 @@ module.exports = async (req, res) => {
   const tag = TAGS[videoId] || videoId;
   const cleanName = videoName.replace(/\s*\(\d{4}\)$/, '');
 
-  // Sheets и подсчёт суммы — независимы, гоняем параллельно
-  const [, totalCents] = await Promise.all([
-    appendToSheet({
-      video: `${tag} | ${cleanName}`,
-      email,
-      eur,
-      session_id: session.id,
-    }),
-    sumForVideo(stripe, videoId).catch((e) => {
-      console.error('sum failed', e);
-      return null;
-    }),
-  ]);
+  try {
+    // Sheets и подсчёт суммы — независимы, гоняем параллельно
+    const [, totalCents] = await Promise.all([
+      appendToSheet({
+        video: `${tag} | ${cleanName}`,
+        email,
+        eur,
+        session_id: session.id,
+      }),
+      sumForVideo(stripe, videoId).catch((e) => {
+        console.error('sum failed', e);
+        return null;
+      }),
+    ]);
 
-  const escape = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
+    const escape = (s) => String(s).replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
 
-  let text =
-    `<b>💸 Новый донат</b>\n` +
-    `Видео: <b>${escape(videoName)}</b>\n` +
-    `Сумма: <b>€${eur}</b>\n` +
-    `Email: <code>${escape(email)}</code>`;
-  if (totalCents !== null) {
-    const totalEur = totalCents / 100;
-    text += `\n\nВсего по видео: <b>€${totalEur}</b> из €100`;
+    let text =
+      `<b>💸 Новый донат</b>\n` +
+      `Видео: <b>${escape(videoName)}</b>\n` +
+      `Сумма: <b>€${eur}</b>\n` +
+      `Email: <code>${escape(email)}</code>`;
+    if (totalCents !== null) {
+      const totalEur = totalCents / 100;
+      text += `\n\nВсего по видео: <b>€${totalEur}</b> из €100`;
+    }
+    await tg(text);
+
+    if (
+      totalCents !== null &&
+      totalCents >= GOAL_CENTS &&
+      totalCents - (session.amount_total || 0) < GOAL_CENTS
+    ) {
+      await tg(
+        `🏆 <b>ВИДЕО СОБРАЛО €100!</b>\n` +
+        `<b>${escape(videoName)}</b>\n` +
+        `Пора готовить рассылку доступа всем, кто проголосовал.`
+      );
+    }
+
+    // Маркируем как обработанное — только после успеха
+    processedEvents.add(event.id);
+    if (processedEvents.size > 200) {
+      processedEvents = new Set(Array.from(processedEvents).slice(-100));
+    }
+  } catch (e) {
+    console.error('webhook processing error', e);
+    // Не отвечаем 200 — Stripe ретрайнет, и в следующий раз дедуп нас пропустит
+    return res.status(500).json({ error: 'processing_failed' });
   }
-  await tg(text);
 
-  if (
-    totalCents !== null &&
-    totalCents >= GOAL_CENTS &&
-    totalCents - (session.amount_total || 0) < GOAL_CENTS
-  ) {
-    await tg(
-      `🏆 <b>ВИДЕО СОБРАЛО €100!</b>\n` +
-      `<b>${escape(videoName)}</b>\n` +
-      `Пора готовить рассылку доступа всем, кто проголосовал.`
-    );
-  }
+  return res.status(200).json({ received: true });
 };
 
 module.exports.config = { api: { bodyParser: false } };
