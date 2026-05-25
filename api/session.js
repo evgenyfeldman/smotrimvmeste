@@ -24,7 +24,9 @@ module.exports = async (req, res) => {
     const eur = (session.amount_total || 0) / 100;
     const paid = session.payment_status === 'paid';
 
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    // Не кэшируем: сразу после оплаты Stripe может вернуть частично заполненную сессию;
+    // если бы мы это закэшировали — все последующие запросы для того же sid отдавали бы пустоту.
+    res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({
       paid,
       video_id: videoId,

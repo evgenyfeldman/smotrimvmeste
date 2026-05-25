@@ -20,7 +20,7 @@
     const session = await sessionRes.json();
 
     document.getElementById('video-name').textContent = session.video_name || vid || '—';
-    document.getElementById('eur').textContent = '€' + (session.eur ?? '—');
+    document.getElementById('eur').textContent = session.eur != null && session.eur > 0 ? '€' + session.eur : '—';
     document.getElementById('email').textContent = session.email || '—';
 
     if (totalsRes.ok) {
