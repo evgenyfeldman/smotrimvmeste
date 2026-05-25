@@ -7,11 +7,52 @@ const VIDEOS = {
   '2016': 'Дебаты Трампа и Клинтон (2016)',
   'apprentice': 'The Apprentice (2004)',
 };
-// Ручные оверрайды состояний — задаются вручную когда видео переходит из «сбор» в «эфир назначен» или «архив».
-// Формат: { 'video_id': 'past' | 'won' }. Иначе по умолчанию — 'open'.
-// Раньше тут была автоматическая проверка через подсчёт Stripe-сессий, но это добавляло
-// 1-2 сек на каждое открытие Stripe Checkout — для скорости отказались.
+// Ручные оверрайды состояний: используются для 'past' (эфир прошёл) и при необходимости форсировать.
+// Won — определяется автоматически по сумме (см. ниже).
 const STATE_OVERRIDES = {};
+const GOAL_CENTS = 10000;
+
+// Кэш сумм по видео в памяти warm-инстанса. Обновляется раз в минуту.
+// Если кэш свеж — /api/checkout мгновенно возвращает состояние без запросов к Stripe.
+let totalsCache = { computed: 0, totals: null };
+const TOTALS_CACHE_TTL = 60 * 1000;
+
+async function refreshTotals(stripe) {
+  const totals = {};
+  let starting_after;
+  for (let i = 0; i < 50; i++) {
+    const resp = await stripe.checkout.sessions.list({
+      limit: 100,
+      status: 'complete',
+      starting_after,
+    });
+    for (const s of resp.data) {
+      const vid = s.metadata?.video_id;
+      if (vid && s.payment_status === 'paid') {
+        totals[vid] = (totals[vid] || 0) + (s.amount_total || 0);
+      }
+    }
+    if (!resp.has_more) break;
+    starting_after = resp.data[resp.data.length - 1].id;
+  }
+  return totals;
+}
+
+async function getVideoState(stripe, videoId) {
+  if (STATE_OVERRIDES[videoId]) return STATE_OVERRIDES[videoId];
+  const fresh = Date.now() - totalsCache.computed < TOTALS_CACHE_TTL;
+  if (!fresh || !totalsCache.totals) {
+    try {
+      totalsCache.totals = await refreshTotals(stripe);
+      totalsCache.computed = Date.now();
+    } catch (e) {
+      console.error('totals refresh for state failed', e);
+      return 'open';
+    }
+  }
+  const cents = totalsCache.totals[videoId] || 0;
+  return cents >= GOAL_CENTS ? 'won' : 'open';
+}
 
 module.exports = async (req, res) => {
   try {
@@ -34,8 +75,7 @@ module.exports = async (req, res) => {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const origin = req.headers.origin || `https://${req.headers.host}`;
 
-    // Состояние — из ручной мапы, иначе считаем open. Никаких медленных запросов.
-    const state = STATE_OVERRIDES[video_id] || 'open';
+    const state = await getVideoState(stripe, video_id);
     const minEur = state === 'past' ? 5 : (state === 'won' ? 8 : 7);
     if (eur < minEur) {
       return res.status(400).json({ error: 'invalid_amount', min: minEur });
