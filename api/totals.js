@@ -2,11 +2,12 @@ const Stripe = require('stripe');
 
 const VIDEO_IDS = ['1960', '1992', '2008', '2016', 'apprentice'];
 
-// Кэш сумм в памяти warm-инстанса. Раз в 5 секунд — пересчёт из Stripe.
-// Короткий TTL чтобы после оплаты success-страница быстро увидела новую сумму.
+// Кэш сумм в памяти warm-инстанса. Большой TTL (5 минут) для скорости главной страницы.
+// При оплате success-страница использует свой механизм (см. /api/session) и видит свежие цифры,
+// поэтому здесь приоритет — скорость, а не свежесть.
 let cache = { computed: 0, totals: null };
 let inflight = null;
-const TTL_MS = 5 * 1000;
+const TTL_MS = 5 * 60 * 1000;
 
 async function computeTotals(stripe) {
   const totals = Object.fromEntries(VIDEO_IDS.map((v) => [v, 0]));
@@ -30,11 +31,28 @@ async function computeTotals(stripe) {
 }
 
 async function getTotals(stripe) {
+  // Если есть кэш и он свежий — мгновенный ответ
   if (cache.totals && Date.now() - cache.computed < TTL_MS) {
     return cache.totals;
   }
-  // Если уже идёт пересчёт — присоединимся к нему, чтобы не плодить параллельные запросы.
-  if (inflight) return inflight;
+  // Если есть кэш (пусть и протухший), а пересчёт ещё не идёт — запускаем фоном, отдаём старое
+  if (cache.totals && !inflight) {
+    inflight = (async () => {
+      try {
+        const totals = await computeTotals(stripe);
+        cache = { computed: Date.now(), totals };
+        return totals;
+      } finally {
+        inflight = null;
+      }
+    })();
+    return cache.totals;
+  }
+  // Если идёт пересчёт — присоединяемся
+  if (inflight) {
+    return cache.totals || inflight;
+  }
+  // Совсем нет данных — придётся подождать
   inflight = (async () => {
     try {
       const totals = await computeTotals(stripe);
@@ -51,8 +69,8 @@ module.exports = async (req, res) => {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const totals = await getTotals(stripe);
-    // CDN: 3 сек свежее, до 30 сек — отдаём stale и фоном обновляем
-    res.setHeader('Cache-Control', 's-maxage=3, stale-while-revalidate=30');
+    // CDN: 60 сек свежее, до 10 минут — отдаём stale и фоном обновляем
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
     return res.status(200).json({ totals });
   } catch (e) {
     console.error('totals error', e);
