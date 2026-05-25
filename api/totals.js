@@ -69,8 +69,10 @@ module.exports = async (req, res) => {
   try {
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const totals = await getTotals(stripe);
-    // CDN: 60 сек свежее, до 10 минут — отдаём stale и фоном обновляем
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=600');
+    // Vercel CDN: 60 сек свежее, до 10 минут — отдаём stale и фоном обновляем
+    // (Vercel-specific заголовок, потому что обычный Cache-Control он переписывает)
+    res.setHeader('CDN-Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600');
+    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
     return res.status(200).json({ totals });
   } catch (e) {
     console.error('totals error', e);

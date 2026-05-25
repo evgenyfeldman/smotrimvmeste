@@ -8,7 +8,39 @@
     if (btn) btn.addEventListener('click', () => openAmountForm(card));
   });
 
+  // Сразу применяем последние известные значения из localStorage (мгновенный фидбек)
+  applyCachedTotals();
   loadTotals();
+
+  function applyCachedTotals() {
+    try {
+      const raw = localStorage.getItem('lastTotals');
+      if (!raw) return;
+      const totals = JSON.parse(raw);
+      if (!totals || typeof totals !== 'object') return;
+      updateCardsFromTotals(totals);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  function updateCardsFromTotals(totals) {
+    document.querySelectorAll('.card').forEach((card) => {
+      if (card.dataset.preview === '1') return;
+      if (card.classList.contains('is-past')) return;
+      if (card.querySelector('.row')?.dataset.expanded) return;
+      const id = card.dataset.id;
+      const cents = (totals && totals[id]) || 0;
+      const eur = Math.floor(cents / 100);
+      const pct = Math.min(100, Math.floor((cents / 10000) * 100));
+      const isWon = cents >= GOAL_CENTS;
+      card.dataset.raised = String(eur);
+      card.classList.toggle('is-won', isWon);
+      const bar = card.querySelector('.progress > span');
+      if (bar) bar.style.width = pct + '%';
+      renderCollapsedRow(card);
+    });
+  }
 
   function showCancelBannerIfNeeded() {
     const params = new URLSearchParams(location.search);
@@ -29,21 +61,8 @@
       const r = await fetch('/api/totals');
       if (!r.ok) return;
       const { totals } = await r.json();
-      document.querySelectorAll('.card').forEach((card) => {
-        if (card.dataset.preview === '1') return;
-        if (card.classList.contains('is-past')) return;
-        if (card.querySelector('.row')?.dataset.expanded) return;
-        const id = card.dataset.id;
-        const cents = (totals && totals[id]) || 0;
-        const eur = Math.floor(cents / 100);
-        const pct = Math.min(100, Math.floor((cents / 10000) * 100));
-        const isWon = cents >= GOAL_CENTS;
-        card.dataset.raised = String(eur);
-        card.classList.toggle('is-won', isWon);
-        const bar = card.querySelector('.progress > span');
-        if (bar) bar.style.width = pct + '%';
-        renderCollapsedRow(card);
-      });
+      updateCardsFromTotals(totals);
+      try { localStorage.setItem('lastTotals', JSON.stringify(totals)); } catch (e) { /* ignore */ }
     } catch (e) {
       console.error('totals load error', e);
     }
