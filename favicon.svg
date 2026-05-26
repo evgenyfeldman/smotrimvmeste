@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Антенна -->
+  <line x1="16" y1="11" x2="7" y2="2" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="16" y1="11" x2="25" y2="2" stroke="#111" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Корпус ТВ -->
+  <rect x="2" y="10" width="28" height="20" rx="3" fill="#111"/>
+  <!-- Экран -->
+  <rect x="4.5" y="12.5" width="23" height="15" rx="1" fill="#fff"/>
+  <!-- EF -->
+  <text x="16" y="24.2" text-anchor="middle"
+        font-family="Charter, Georgia, 'Times New Roman', serif"
+        font-size="12" font-weight="700" fill="#111"
+        letter-spacing="0.3">EF</text>
+</svg>
