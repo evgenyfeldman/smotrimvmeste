@@ -14,7 +14,7 @@ module.exports = async (req, res) => {
     if (!sid || typeof sid !== 'string' || !sid.startsWith('cs_')) {
       return res.status(400).json({ error: 'invalid_session_id' });
     }
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' });
     const session = await stripe.checkout.sessions.retrieve(sid);
 
     const videoId = session.metadata?.video_id;

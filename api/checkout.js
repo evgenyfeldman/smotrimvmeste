@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const kvStore = require('./_kv');
 
 const VIDEOS = {
   '1960': 'Дебаты Кеннеди и Никсона (1960)',
@@ -19,6 +20,19 @@ module.exports = async (req, res) => {
       return res.status(405).json({ error: 'method_not_allowed' });
     }
 
+    // Rate limit: 10 запросов в минуту на IP. Не препятствует обычному юзеру
+    // (которому нужен 1 запрос на оплату), но останавливает спам-ботов от
+    // массовой генерации Stripe-сессий.
+    const ip =
+      (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+      req.socket?.remoteAddress ||
+      'unknown';
+    const rl = await kvStore.checkRateLimit('checkout:' + ip, 10, 60);
+    if (!rl.allowed) {
+      res.setHeader('Retry-After', '60');
+      return res.status(429).json({ error: 'too_many_requests' });
+    }
+
     const { video_id, amount } = req.body || {};
     const videoName = VIDEOS[video_id];
     if (!videoName) {
@@ -30,8 +44,11 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'invalid_amount' });
     }
 
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const origin = req.headers.origin || `https://${req.headers.host}`;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' });
+    // Origin берём из env (прод) или из host-заголовка Vercel (preview/local).
+    // Не из req.headers.origin: атакующий может подсунуть свой Origin и
+    // увести юзера после оплаты на фишинговый success.
+    const origin = process.env.PUBLIC_BASE_URL || `https://${req.headers.host}`;
 
     const state = STATE_OVERRIDES[video_id] || 'open';
     const minEur = state === 'past' ? 5 : (state === 'won' ? 8 : 7);

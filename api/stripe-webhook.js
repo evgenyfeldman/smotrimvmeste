@@ -117,7 +117,7 @@ module.exports = async (req, res) => {
     return res.status(405).end();
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' });
   const sig = req.headers['stripe-signature'];
 
   let event;
@@ -131,6 +131,13 @@ module.exports = async (req, res) => {
 
   if (event.type !== 'checkout.session.completed') {
     return res.status(200).json({ received: true });
+  }
+
+  // Защитная проверка: если оплата не прошла (актуально для async payment methods
+  // вроде SEPA, если когда-то добавим), просто игнорим. Карты сейчас единственный
+  // метод и они синхронные — статус всегда 'paid' при .completed, но check на будущее.
+  if (event.data.object?.payment_status !== 'paid') {
+    return res.status(200).json({ received: true, skipped: 'not_paid' });
   }
 
   // Дедуп события. KV — приоритетнее (переживает cold start). Память — фоллбэк.

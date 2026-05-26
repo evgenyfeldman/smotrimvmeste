@@ -74,7 +74,7 @@ async function getTotals(stripe, { bypassCache } = {}) {
 
 module.exports = async (req, res) => {
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' });
     const bypassCache = req.query?.fresh === '1';
     const totals = await getTotals(stripe, { bypassCache });
 

@@ -52,6 +52,25 @@ async function incrementTotal(videoId, cents) {
   return await kv.incrby(key(videoId), cents);
 }
 
+// Rate limit: возвращает { allowed, count, limit }. Если KV не работает — разрешаем (fail-open).
+// Окно фиксированное: первый incr выставляет TTL, последующие в окне его наследуют.
+async function checkRateLimit(bucket, limit, windowSec) {
+  const kv = getKv();
+  if (!kv) return { allowed: true, count: 0, limit };
+  const k = 'rl:' + bucket;
+  try {
+    const count = await kv.incr(k);
+    if (count === 1) {
+      // первый запрос в окне — ставим TTL
+      await kv.expire(k, windowSec);
+    }
+    return { allowed: count <= limit, count, limit };
+  } catch (e) {
+    console.error('rate limit error', e);
+    return { allowed: true, count: 0, limit };
+  }
+}
+
 // Дедуп webhook-событий через KV (TTL 1 день). Возвращает true если первый раз.
 async function tryClaimEvent(eventId) {
   const kv = getKv();
@@ -68,5 +87,6 @@ module.exports = {
   writeTotals,
   incrementTotal,
   tryClaimEvent,
+  checkRateLimit,
   VIDEO_IDS,
 };
