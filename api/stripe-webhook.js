@@ -160,6 +160,10 @@ module.exports = async (req, res) => {
 
   const session = event.data.object;
   const videoId = session.metadata?.video_id;
+  // isOurs = платёж сделан через наш сайт (есть метаданные video_id из нашего map).
+  // Через этот же Stripe-аккаунт идут донаты с других проектов автора — мы про них
+  // получаем webhook-события, но не пишем в Sheets и не трогаем KV.
+  const isOurs = !!VIDEOS[videoId];
   const videoName = VIDEOS[videoId] || videoId || 'unknown';
   const eur = (session.amount_total || 0) / 100;
   const amountCents = session.amount_total || 0;
@@ -181,12 +185,17 @@ module.exports = async (req, res) => {
           return null;
         });
 
-    const sheetsPromise = appendToSheet({
-      video: `${tag} | ${cleanName}`,
-      email,
-      eur,
-      session_id: session.id,
-    });
+    // В Sheets пишем только наши платежи. Чужие (с другого сайта, шарящего
+    // этот же Stripe-аккаунт) пропускаем — иначе таблица засоряется строками
+    // "undefined | unknown".
+    const sheetsPromise = isOurs
+      ? appendToSheet({
+          video: `${tag} | ${cleanName}`,
+          email,
+          eur,
+          session_id: session.id,
+        })
+      : Promise.resolve();
 
     const [, totalCents] = await Promise.all([sheetsPromise, incrementPromise]);
 
