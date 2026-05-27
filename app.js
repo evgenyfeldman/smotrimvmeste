@@ -82,7 +82,7 @@
       row.dataset.won = '1';
       row.innerHTML = `
         <div class="won-info">
-          ${airDate ? `<div class="won-date">Эфир ${escapeHtml(airDate)}</div>` : ''}
+          ${airDate ? `<div class="won-date">${escapeHtml(airDate)}</div>` : ''}
           <div class="sum sum-won">Необходимая сумма собрана! Вы ещё можете купить билет</div>
         </div>
         <button class="vote" type="button" data-video="${id}">Купить билет €8+</button>
@@ -129,7 +129,7 @@
       row.dataset.won = '1';
       row.innerHTML = `
         <div class="won-info">
-          ${airDate ? `<div class="won-date">Эфир ${escapeHtml(airDate)}</div>` : ''}
+          ${airDate ? `<div class="won-date">${escapeHtml(airDate)}</div>` : ''}
           <div class="sum sum-won">Необходимая сумма собрана! Вы ещё можете купить билет</div>
         </div>
         ${formHtml}
