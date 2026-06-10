@@ -1,10 +1,31 @@
 // Простой админ-эндпоинт для редкой ручной работы со стейтом в KV.
-// Защищён общим секретом (тот же что и Apps Script — SHEETS_WEBHOOK_SECRET).
+// Секрет — ТОЛЬКО через заголовок x-admin-secret: query-string попадает в логи
+// Vercel и историю браузера. ADMIN_SECRET — отдельный от Sheets, чтобы утечка
+// одного не открывала второй; фоллбэк на SHEETS_WEBHOOK_SECRET пока ADMIN_SECRET
+// не задан в env.
+const crypto = require('crypto');
 const kvStore = require('./_kv');
 
+function safeEqual(a, b) {
+  const ab = Buffer.from(String(a));
+  const bb = Buffer.from(String(b));
+  return ab.length === bb.length && crypto.timingSafeEqual(ab, bb);
+}
+
 module.exports = async (req, res) => {
-  const secret = req.headers['x-admin-secret'] || req.query?.secret;
-  if (!secret || secret !== process.env.SHEETS_WEBHOOK_SECRET) {
+  // Rate limit до проверки секрета — иначе его можно перебирать без ограничений.
+  // x-real-ip ставит сам Vercel (в отличие от x-forwarded-for, куда клиент
+  // может подсунуть свои значения).
+  const ip = req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+  const rl = await kvStore.checkRateLimit('admin:' + ip, 10, 60);
+  if (!rl.allowed) {
+    res.setHeader('Retry-After', '60');
+    return res.status(429).json({ error: 'too_many_requests' });
+  }
+
+  const expected = process.env.ADMIN_SECRET || process.env.SHEETS_WEBHOOK_SECRET;
+  const secret = req.headers['x-admin-secret'];
+  if (!secret || !expected || !safeEqual(secret, expected)) {
     return res.status(401).json({ error: 'unauthorized' });
   }
 

@@ -1,4 +1,5 @@
 const Stripe = require('stripe');
+const kvStore = require('./_kv');
 
 const VIDEOS = {
   '1960': 'Дебаты Кеннеди и Никсона (1960)',
@@ -14,10 +15,25 @@ module.exports = async (req, res) => {
     if (!sid || typeof sid !== 'string' || !sid.startsWith('cs_')) {
       return res.status(400).json({ error: 'invalid_session_id' });
     }
+
+    // Rate limit: success-странице нужен 1 запрос, 20/мин с запасом хватает.
+    // Без лимита эндпоинт позволяет массово прощупывать session-id ради email-ов.
+    const ip = req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
+    const rl = await kvStore.checkRateLimit('session:' + ip, 20, 60);
+    if (!rl.allowed) {
+      res.setHeader('Retry-After', '60');
+      return res.status(429).json({ error: 'too_many_requests' });
+    }
+
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2026-04-22.dahlia' });
     const session = await stripe.checkout.sessions.retrieve(sid);
 
     const videoId = session.metadata?.video_id;
+    // Отдаём только сессии нашего сайта. Через этот Stripe-аккаунт идут платежи
+    // других проектов — их email-ы по чужому session-id светить нельзя.
+    if (!VIDEOS[videoId]) {
+      return res.status(404).json({ error: 'not_found' });
+    }
     const videoName = VIDEOS[videoId] || null;
     const email =
       session.customer_details?.email || session.customer_email || null;

@@ -233,6 +233,13 @@ module.exports = async (req, res) => {
     }
   } catch (e) {
     console.error('webhook processing error', e);
+    // Освобождаем claim: иначе ретрай Stripe упрётся в дедуп и платёж
+    // навсегда выпадет из Sheets/тотала/уведомлений.
+    if (kvStore.isEnabled()) {
+      await kvStore
+        .releaseEvent(event.id)
+        .catch((err) => console.error('release event failed', err));
+    }
     return res.status(500).json({ error: 'processing_failed' });
   }
 

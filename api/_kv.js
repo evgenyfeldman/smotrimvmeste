@@ -81,12 +81,21 @@ async function tryClaimEvent(eventId) {
   return result === 'OK' || result === true;
 }
 
+// Снимает claim с события — вызываем при ошибке обработки, чтобы ретрай Stripe
+// не был отброшен дедупом и платёж не потерялся.
+async function releaseEvent(eventId) {
+  const kv = getKv();
+  if (!kv) return;
+  await kv.del('evt:' + eventId);
+}
+
 module.exports = {
   isEnabled: () => !!getKv(),
   readTotals,
   writeTotals,
   incrementTotal,
   tryClaimEvent,
+  releaseEvent,
   checkRateLimit,
   VIDEO_IDS,
 };
