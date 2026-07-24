@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 const kvStore = require('./_kv');
+const schedule = require('./_schedule');
 
 const VIDEOS = {
   '1960': 'Дебаты Кеннеди и Никсона (1960)',
@@ -53,7 +54,11 @@ module.exports = async (req, res) => {
     // увести юзера после оплаты на фишинговый success.
     const origin = process.env.PUBLIC_BASE_URL || `https://${req.headers.host}`;
 
-    const state = STATE_OVERRIDES[video_id] || 'open';
+    // После archiveAt видео автоматически продаётся как запись, минуя ручной
+    // STATE_OVERRIDES. До этого — берём ручной оверрайд (won/open).
+    const state = schedule.isArchived(video_id)
+      ? 'past'
+      : (STATE_OVERRIDES[video_id] || 'open');
     const minEur = state === 'past' ? 5 : (state === 'won' ? 8 : 7);
     if (eur < minEur) {
       return res.status(400).json({ error: 'invalid_amount', min: minEur });
@@ -65,8 +70,9 @@ module.exports = async (req, res) => {
       ? 'Билет на эфир'
       : 'Донат и билет на эфир';
 
+    const recording = schedule.recordingUrl(video_id);
     const description = state === 'past'
-      ? 'Доступ к записи прошедшего эфира «Смотрим вместе с Евгением Фельдманом». Ссылку на запись пришлём на email.'
+      ? `Доступ к записи прошедшего эфира «Смотрим вместе с Евгением Фельдманом».${recording ? ` Запись доступна по ссылке: ${recording}` : ' Ссылку на запись пришлём на email.'}`
       : state === 'won'
       ? 'Билет на закрытый эфир «Смотрим вместе с Евгением Фельдманом». Ссылку на эфир пришлём на email.'
       : 'Сумма — это голос и билет на закрытый эфир «Смотрим вместе с Евгением Фельдманом». Когда видео соберёт €100, я объявлю дату эфира и пришлю ссылку всем участникам.';

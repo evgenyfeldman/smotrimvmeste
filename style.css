@@ -12,6 +12,9 @@
 
 * { box-sizing: border-box; }
 
+/* [hidden] должен побеждать явный display у .card/.thanks-row и т.п. */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   padding: 0;
@@ -514,6 +517,28 @@ a:hover { text-decoration-color: var(--ink); }
   font-style: italic;
   padding-left: 16px;
   border-left: 3px solid var(--ink);
+}
+.thanks-record {
+  background: var(--won);
+  border: 1px solid var(--won-line);
+  border-radius: 4px;
+  padding: 18px 22px;
+  margin: 0 0 24px;
+}
+.thanks-record-text {
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.thanks-record-link {
+  font-size: 17px;
+  color: var(--accent);
+  word-break: break-all;
+  font-weight: 700;
 }
 .thanks-back {
   display: inline-block;

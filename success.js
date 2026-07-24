@@ -27,6 +27,25 @@
     document.getElementById('email').textContent = session.email || '—';
     details.hidden = false;
 
+    // Архивная покупка: эфир уже прошёл — показываем ссылку на запись сразу,
+    // а «голосовательные» блоки (прогресс/призыв делиться) прячем как неуместные.
+    if (session.recording) {
+      document.getElementById('title').textContent = 'Спасибо за покупку!';
+      lead.textContent = 'Запись показа уже доступна — смотрите по ссылке ниже. Она также придёт вам в чеке на email.';
+      const recordLink = document.getElementById('record-link');
+      recordLink.href = session.recording;
+      recordLink.textContent = session.recording;
+      document.getElementById('record').hidden = false;
+      const emailLabel = document.getElementById('email-label');
+      if (emailLabel) emailLabel.textContent = 'Чек придёт на';
+      const note = document.getElementById('note');
+      if (note) note.hidden = true;
+      const progressRow = document.getElementById('progress-row');
+      if (progressRow) progressRow.hidden = true;
+      const progressWrap = document.getElementById('progress-wrap');
+      if (progressWrap) progressWrap.hidden = true;
+    }
+
     if (!session.paid) {
       lead.textContent = 'Платёж пока не подтверждён. Если деньги списались — он появится в течение минуты.';
     }

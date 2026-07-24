@@ -34,7 +34,7 @@
 
     <main class="grid" id="videos">
 
-      <article class="card" data-id="1960" data-raised="0" data-air-date="Эфир 24 июля · 20:00 Мск / 13:00 НЙ">
+      <article class="card" data-id="1960" data-raised="0" data-air-date="Эфир 24 июля · 20:00 Мск / 13:00 НЙ" data-live-at="2026-07-24T17:00:00Z" data-archive-at="2026-07-24T19:00:00Z" data-past-meta="Эфир состоялся · 24 июля">
         <div class="card-year">1960</div>
         <div class="card-body">
           <div class="card-image" aria-hidden="true" style="background-image:url('images/1960.jpg');background-position:center 25%"></div>
@@ -105,6 +105,11 @@
       </article>
 
     </main>
+
+    <section class="past" id="archive" hidden>
+      <div class="section-mark">Архив показов</div>
+      <div class="grid" id="archive-grid"></div>
+    </section>
 
     <footer class="foot">
       <p>Оплата через Stripe Checkout. Email используется только для отправки ссылки на закрытый эфир с выигравшим видео.</p>

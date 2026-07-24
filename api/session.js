@@ -1,5 +1,6 @@
 const Stripe = require('stripe');
 const kvStore = require('./_kv');
+const schedule = require('./_schedule');
 
 const VIDEOS = {
   '1960': 'Дебаты Кеннеди и Никсона (1960)',
@@ -40,6 +41,11 @@ module.exports = async (req, res) => {
     const eur = (session.amount_total || 0) / 100;
     const amountTotalCents = session.amount_total || 0;
     const paid = session.payment_status === 'paid';
+    // Если эфир по этому видео уже прошёл — отдаём ссылку на запись, чтобы
+    // success-страница показала её купившему.
+    const recording = schedule.isArchived(videoId)
+      ? schedule.recordingUrl(videoId)
+      : null;
 
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({
@@ -49,6 +55,7 @@ module.exports = async (req, res) => {
       email,
       eur,
       amount_total_cents: amountTotalCents,
+      recording,
     });
   } catch (e) {
     console.error('session error', e);

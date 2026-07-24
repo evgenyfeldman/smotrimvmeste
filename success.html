@@ -10,7 +10,7 @@
 <body>
   <main class="thanks">
     <div class="thanks-icon" aria-hidden="true">💌</div>
-    <h1 class="thanks-h1">Голос засчитан</h1>
+    <h1 class="thanks-h1" id="title">Голос засчитан</h1>
     <p class="thanks-lead" id="lead">Спасибо за участие! До встречи на закрытом эфире!</p>
 
     <div class="thanks-card" id="details" hidden>
@@ -23,14 +23,19 @@
         <span class="thanks-value" id="eur">—</span>
       </div>
       <div class="thanks-row">
-        <span class="thanks-label">Ссылка на эфир придёт на</span>
+        <span class="thanks-label" id="email-label">Ссылка на эфир придёт на</span>
         <span class="thanks-value" id="email">—</span>
       </div>
-      <div class="thanks-row thanks-progress-row">
+      <div class="thanks-row thanks-progress-row" id="progress-row">
         <span class="thanks-label">На просмотр собрано</span>
         <span class="thanks-value" id="progress-text">—</span>
       </div>
-      <div class="progress" aria-hidden="true"><span id="progress-bar" style="width:0%"></span></div>
+      <div class="progress" id="progress-wrap" aria-hidden="true"><span id="progress-bar" style="width:0%"></span></div>
+    </div>
+
+    <div class="thanks-record" id="record" hidden>
+      <p class="thanks-record-text">Запись купленного вами показа доступна по ссылке:</p>
+      <a class="thanks-record-link" id="record-link" href="#" target="_blank" rel="noopener"></a>
     </div>
 
     <p class="thanks-note" id="note">

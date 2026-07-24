@@ -12,6 +12,11 @@
   applyCachedTotals();
   loadTotals();
 
+  // Автопереходы по времени: во время эфира карточка скрывается, через 2 часа
+  // после старта (archiveAt) уезжает в «Архив» как запись. Пересчитываем на
+  // загрузке и по таймеру, чтобы открытая вкладка обновилась сама.
+  applyLifecycle();
+
   function applyCachedTotals() {
     try {
       const raw = localStorage.getItem('lastTotals');
@@ -95,6 +100,79 @@
       `;
     }
     row.querySelector('.vote').addEventListener('click', () => openAmountForm(card));
+  }
+
+  // --- Жизненный цикл карточки по времени (эфир → скрытие → архив) ---
+
+  function applyLifecycle() {
+    const now = Date.now();
+    let nextBoundary = Infinity;
+
+    document.querySelectorAll('.card[data-archive-at], .card[data-live-at]').forEach((card) => {
+      const liveAt = card.dataset.liveAt ? Date.parse(card.dataset.liveAt) : NaN;
+      const archiveAt = card.dataset.archiveAt ? Date.parse(card.dataset.archiveAt) : NaN;
+
+      if (!Number.isNaN(archiveAt) && now >= archiveAt) {
+        moveCardToArchive(card);
+        return; // карточка пересобрана и убрана из сетки — таймеры ей больше не нужны
+      }
+
+      if (!Number.isNaN(liveAt) && now >= liveAt) {
+        // Идёт эфир — прячем карточку до перехода в архив
+        card.hidden = true;
+      } else {
+        card.hidden = false;
+      }
+
+      // Ближайшая будущая граница — чтобы перепланировать один таймер
+      if (!Number.isNaN(liveAt) && liveAt > now) nextBoundary = Math.min(nextBoundary, liveAt);
+      if (!Number.isNaN(archiveAt) && archiveAt > now) nextBoundary = Math.min(nextBoundary, archiveAt);
+    });
+
+    if (nextBoundary !== Infinity) {
+      // +1с чтобы гарантированно перескочить границу; setTimeout ограничен ~24.8 дня
+      const delay = nextBoundary - now + 1000;
+      if (delay > 0 && delay < 2147483647) setTimeout(applyLifecycle, delay);
+    }
+  }
+
+  function moveCardToArchive(card) {
+    const grid = document.getElementById('archive-grid');
+    const section = document.getElementById('archive');
+    if (!grid || !section) return;
+
+    const id = card.dataset.id;
+    const year = card.querySelector('.card-year')?.textContent?.trim() || '';
+    const title = card.querySelector('h2')?.textContent?.trim() || '';
+    const desc = card.querySelector('.desc')?.textContent?.trim() || '';
+    const img = card.querySelector('.card-image');
+    const bgImage = img?.style.backgroundImage || '';
+    const bgPos = img?.style.backgroundPosition || 'center';
+    const meta = card.dataset.pastMeta || 'Эфир состоялся';
+
+    const past = document.createElement('article');
+    past.className = 'card card-past is-past';
+    past.dataset.id = id;
+    past.innerHTML = `
+      <div class="past-img"></div>
+      <div class="past-body">
+        <div class="past-year">${escapeHtml(year)}</div>
+        <h3>${escapeHtml(title)}</h3>
+        <p class="desc">${escapeHtml(desc)}</p>
+        <p class="past-meta">${escapeHtml(meta)}</p>
+      </div>
+      <div class="row"></div>
+    `;
+    // Стиль фона ставим через DOM, а не в атрибут: url("…") содержит кавычки,
+    // которые оборвали бы style="…" в строке innerHTML.
+    const pastImg = past.querySelector('.past-img');
+    if (bgImage) pastImg.style.backgroundImage = bgImage;
+    pastImg.style.backgroundPosition = bgPos;
+
+    grid.appendChild(past);
+    section.hidden = false;
+    card.remove();
+    renderCollapsedRow(past); // рисует кнопку «Купить запись €5+» (is-past)
   }
 
   function escapeHtml(s) {
