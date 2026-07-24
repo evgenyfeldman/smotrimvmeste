@@ -70,9 +70,13 @@ module.exports = async (req, res) => {
       ? 'Билет на эфир'
       : 'Донат и билет на эфир';
 
+    // ВАЖНО: сюда ссылку на запись класть нельзя — product_data.description
+    // показывается на странице оплаты ДО платежа, то есть запись можно было бы
+    // посмотреть бесплатно. Ссылка отдаётся только после оплаты: на success-странице
+    // (через /api/session) и в чеке (payment_intent_data.description ниже).
     const recording = schedule.recordingUrl(video_id);
     const description = state === 'past'
-      ? `Доступ к записи прошедшего эфира «Смотрим вместе с Евгением Фельдманом».${recording ? ` Запись доступна по ссылке: ${recording}` : ' Ссылку на запись пришлём на email.'}`
+      ? 'Доступ к записи прошедшего эфира «Смотрим вместе с Евгением Фельдманом». Ссылка на запись откроется сразу после оплаты и продублируется в чеке.'
       : state === 'won'
       ? 'Билет на закрытый эфир «Смотрим вместе с Евгением Фельдманом». Ссылку на эфир пришлём на email.'
       : 'Сумма — это голос и билет на закрытый эфир «Смотрим вместе с Евгением Фельдманом». Когда видео соберёт €100, я объявлю дату эфира и пришлю ссылку всем участникам.';
@@ -94,6 +98,11 @@ module.exports = async (req, res) => {
         },
       }],
       metadata: { video_id, eur: String(eur) },
+      // Описание платежа: не показывается на странице оплаты, но идёт в чек Stripe.
+      // Единственное место, где ссылка на запись доходит до покупателя письмом.
+      ...(state === 'past' && recording
+        ? { payment_intent_data: { description: `Запись «${videoName}» — смотреть: ${recording}` } }
+        : {}),
       customer_creation: 'always',
       success_url: `${origin}/success.html?vid=${encodeURIComponent(video_id)}&sid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/?canceled=1`,
