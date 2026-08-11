@@ -42,10 +42,10 @@ module.exports = async (req, res) => {
     const amountTotalCents = session.amount_total || 0;
     const paid = session.payment_status === 'paid';
     // Если эфир по этому видео уже прошёл — отдаём ссылку на запись, чтобы
-    // success-страница показала её купившему.
-    const recording = schedule.isArchived(videoId)
-      ? schedule.recordingUrl(videoId)
-      : null;
+    // success-страница показала её купившему. archived отдаём отдельно: эфир
+    // мог пройти, а ссылку ещё не проставили — тогда текст должен быть другим.
+    const archived = schedule.isArchived(videoId);
+    const recording = archived ? schedule.recordingUrl(videoId) : null;
 
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json({
@@ -55,6 +55,7 @@ module.exports = async (req, res) => {
       email,
       eur,
       amount_total_cents: amountTotalCents,
+      archived,
       recording,
     });
   } catch (e) {

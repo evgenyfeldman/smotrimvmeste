@@ -13,7 +13,11 @@
   // Session-данные и общая сумма по видео — независимы, грузим параллельно.
   // Сначала показываем то что пришло первым, чтобы пользователь не сидел перед прочерками.
   const sessionPromise = fetch('/api/session?sid=' + encodeURIComponent(sid)).then(r => r.ok ? r.json() : null);
-  const totalsPromise = fetch('/api/totals?fresh=1').then(r => r.ok ? r.json() : null);
+  // .catch здесь, а не только в try ниже: при архивной покупке мы выходим раньше,
+  // не дождавшись промиса, и его reject остался бы необработанным.
+  const totalsPromise = fetch('/api/totals?fresh=1')
+    .then(r => r.ok ? r.json() : null)
+    .catch(() => null);
 
   let session = null;
   let totalsData = null;
@@ -27,23 +31,30 @@
     document.getElementById('email').textContent = session.email || '—';
     details.hidden = false;
 
-    // Архивная покупка: эфир уже прошёл — показываем ссылку на запись сразу,
-    // а «голосовательные» блоки (прогресс/призыв делиться) прячем как неуместные.
-    if (session.recording) {
+    // Архивная покупка: эфир уже прошёл — «голосовательные» блоки (прогресс,
+    // призыв собрать €100) неуместны, прячем их. Ссылку показываем если она есть;
+    // если эфир прошёл, а ссылку ещё не проставили — честно обещаем письмо.
+    if (session.archived) {
       document.getElementById('title').textContent = 'Спасибо за покупку!';
-      lead.textContent = 'Запись показа уже доступна — смотрите по ссылке ниже. Она также придёт вам в чеке на email.';
-      const recordLink = document.getElementById('record-link');
-      recordLink.href = session.recording;
-      recordLink.textContent = session.recording;
-      document.getElementById('record').hidden = false;
       const emailLabel = document.getElementById('email-label');
-      if (emailLabel) emailLabel.textContent = 'Чек придёт на';
       const note = document.getElementById('note');
-      if (note) note.hidden = true;
       const progressRow = document.getElementById('progress-row');
-      if (progressRow) progressRow.hidden = true;
       const progressWrap = document.getElementById('progress-wrap');
+      if (note) note.hidden = true;
+      if (progressRow) progressRow.hidden = true;
       if (progressWrap) progressWrap.hidden = true;
+
+      if (session.recording) {
+        lead.textContent = 'Запись показа уже доступна — смотрите по ссылке ниже. Она также придёт вам в чеке на email.';
+        const recordLink = document.getElementById('record-link');
+        recordLink.href = session.recording;
+        recordLink.textContent = session.recording;
+        document.getElementById('record').hidden = false;
+        if (emailLabel) emailLabel.textContent = 'Чек придёт на';
+      } else {
+        lead.textContent = 'Запись ещё готовится — пришлю ссылку на неё вам на почту, как только она будет готова.';
+        if (emailLabel) emailLabel.textContent = 'Ссылка на запись придёт на';
+      }
     }
 
     if (!session.paid) {
@@ -55,7 +66,10 @@
     return;
   }
 
-  // Дальше — прогресс, когда totals подгрузятся
+  // Дальше — прогресс, когда totals подгрузятся. Для архивной покупки он не
+  // нужен (блоки уже скрыты выше) — не тратим время и не трогаем тексты.
+  if (session.archived) return;
+
   try {
     totalsData = await totalsPromise;
     if (!totalsData) return;
