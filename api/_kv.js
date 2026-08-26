@@ -17,7 +17,7 @@ function getKv() {
   return kvInstance;
 }
 
-const VIDEO_IDS = ['1960', '1992', '2008', '2016', 'apprentice'];
+const VIDEO_IDS = ['1960', '1967', '1992', '2008', '2016', 'apprentice'];
 const KEY_PREFIX = 'total:';
 
 function key(videoId) {
