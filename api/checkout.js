@@ -28,10 +28,10 @@ module.exports = async (req, res) => {
     // Rate limit: 10 запросов в минуту на IP. Не препятствует обычному юзеру
     // (которому нужен 1 запрос на оплату), но останавливает спам-ботов от
     // массовой генерации Stripe-сессий.
-    const ip =
-      (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
-      req.socket?.remoteAddress ||
-      'unknown';
+    // x-real-ip ставит сам Vercel и клиент подделать не может (в отличие от
+    // x-forwarded-for, куда атакующий может подставить произвольное значение
+    // и на каждый запрос обходить rate-limit).
+    const ip = req.headers['x-real-ip'] || req.socket?.remoteAddress || 'unknown';
     const rl = await kvStore.checkRateLimit('checkout:' + ip, 10, 60);
     if (!rl.allowed) {
       res.setHeader('Retry-After', '60');
