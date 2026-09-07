@@ -12,7 +12,7 @@ const SCHEDULE = {
   },
   '1992': {
     archiveAt: '2026-08-27T20:00:00Z', // 23:00 Мск — эфир 21:00 Мск + 2ч
-    recording: null, // ссылки на запись пока нет — проставить до 23:00 Мск 27 августа
+    recording: 'https://youtube.com/live/peXDppvK_fE?feature=share',
   },
 };
 
